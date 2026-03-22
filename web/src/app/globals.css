@@ -1,0 +1,619 @@
+/* ═══════════════════════════════════════════════════════════════
+   DESIGN TOKENS
+═══════════════════════════════════════════════════════════════ */
+:root {
+  /* Wood desk */
+  --wood-dk:       #150d07;
+  --wood-md:       #1e1208;
+  --wood-lt:       #2d1a0e;
+  --wood-grain:    #3c2516;
+
+  /* Leather cover */
+  --leather-dk:    #1c0805;
+  --leather-md:    #2b1008;
+  --leather-lt:    #3d1a0d;
+  --leather-hi:    #5c2e1a;
+
+  /* Paper */
+  --paper:         #f5edd8;
+  --paper-dk:      #ede0c4;
+  --paper-warm:    #f0e6cc;
+  --paper-line:    rgba(140, 160, 200, 0.28);
+  --paper-margin:  rgba(210, 100, 100, 0.32);
+  --paper-shadow:  rgba(180, 150, 100, 0.12);
+
+  /* Ink */
+  --ink:           #1c0f0c;
+  --ink-md:        #2e1a14;
+  --ink-lt:        #4a2820;
+  --ink-faint:     rgba(28, 15, 12, 0.38);
+
+  /* Gold */
+  --gold:          #c9a84c;
+  --gold-lt:       #f0d78c;
+  --gold-dk:       #8b6914;
+  --gold-shine:    #f5e099;
+
+  /* Glass */
+  --glass-bg:      rgba(255, 255, 255, 0.07);
+  --glass-bd:      rgba(255, 255, 255, 0.16);
+  --glass-hi:      rgba(255, 255, 255, 0.42);
+  --glass-shadow:  rgba(0, 0, 0, 0.38);
+
+  /* Warm glass (gold tint) */
+  --wglass-bg:     rgba(245, 237, 216, 0.06);
+  --wglass-bd:     rgba(201, 168, 76, 0.2);
+
+  /* Semantic */
+  --cream:         #f5edd8;
+  --red:           #d95c5c;
+  --green:         #5baf82;
+  --blue:          #5b8def;
+  --purple:        #9b7fd4;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   RESET
+═══════════════════════════════════════════════════════════════ */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::selection {
+  background: rgba(201, 168, 76, 0.28);
+  color: var(--leather-dk);
+}
+
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(201, 168, 76, 0.28); border-radius: 4px; }
+
+/* ═══════════════════════════════════════════════════════════════
+   TEXTURES
+═══════════════════════════════════════════════════════════════ */
+
+/* Wood desk — horizontal grain lines */
+.tex-wood {
+  background-color: var(--wood-md);
+  background-image:
+    repeating-linear-gradient(
+      89deg,
+      transparent 0px,
+      transparent 22px,
+      rgba(0,0,0,0.032) 22px,
+      rgba(0,0,0,0.032) 23px
+    ),
+    repeating-linear-gradient(
+      91deg,
+      transparent 0px,
+      transparent 40px,
+      rgba(255,255,255,0.006) 40px,
+      rgba(255,255,255,0.006) 41px
+    ),
+    radial-gradient(ellipse at 20% 60%, rgba(40,18,6,0.55) 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 25%, rgba(30,12,4,0.4)  0%, transparent 48%),
+    radial-gradient(ellipse at 50% 90%, rgba(10,5,2,0.3)   0%, transparent 40%);
+}
+
+/* Leather cover */
+.tex-leather {
+  background-color: var(--leather-dk);
+  background-image:
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.72' numOctaves='4' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.09'/%3E%3C/svg%3E"),
+    radial-gradient(ellipse at 38% 32%, var(--leather-md) 0%, var(--leather-dk) 65%);
+}
+
+/* Notebook page — ruled lines + left margin */
+.tex-page {
+  background-color: var(--paper);
+  background-image:
+    /* Red margin line */
+    linear-gradient(
+      90deg,
+      transparent 68px,
+      var(--paper-margin) 68px,
+      var(--paper-margin) 70px,
+      transparent 70px
+    ),
+    /* Ruled lines */
+    repeating-linear-gradient(
+      transparent 0px,
+      transparent 27px,
+      var(--paper-line) 27px,
+      var(--paper-line) 28px
+    );
+  background-size: 100% 100%, 100% 28px;
+  background-attachment: local;
+}
+
+/* Aged paper variant (left page, slightly darker) */
+.tex-page-aged {
+  background-color: var(--paper-dk);
+  background-image:
+    linear-gradient(
+      90deg,
+      transparent 68px,
+      var(--paper-margin) 68px,
+      var(--paper-margin) 70px,
+      transparent 70px
+    ),
+    repeating-linear-gradient(
+      transparent 0px,
+      transparent 27px,
+      var(--paper-line) 27px,
+      var(--paper-line) 28px
+    );
+  background-size: 100% 100%, 100% 28px;
+  background-attachment: local;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GLASSMORPHISM
+═══════════════════════════════════════════════════════════════ */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(28px) saturate(175%);
+  -webkit-backdrop-filter: blur(28px) saturate(175%);
+  border: 1px solid var(--glass-bd);
+  box-shadow:
+    0 2px 4px rgba(0,0,0,0.06),
+    0 8px 18px rgba(0,0,0,0.14),
+    0 22px 44px rgba(0,0,0,0.18),
+    inset 0 1px 0 var(--glass-hi),
+    inset 0 -1px 0 rgba(0,0,0,0.06);
+}
+
+/* Warm tinted glass (gold accent) */
+.glass-warm {
+  background: var(--wglass-bg);
+  backdrop-filter: blur(24px) saturate(160%);
+  -webkit-backdrop-filter: blur(24px) saturate(160%);
+  border: 1px solid var(--wglass-bd);
+  box-shadow:
+    0 4px 12px rgba(0,0,0,0.22),
+    0 12px 28px rgba(0,0,0,0.16),
+    inset 0 1px 0 rgba(255,255,255,0.1);
+}
+
+/* Frosted panel — heavier blur, more opaque */
+.glass-panel {
+  background: rgba(20, 12, 6, 0.55);
+  backdrop-filter: blur(40px) saturate(150%);
+  -webkit-backdrop-filter: blur(40px) saturate(150%);
+  border: 1px solid rgba(255,255,255,0.1);
+  box-shadow:
+    0 8px 24px rgba(0,0,0,0.4),
+    0 24px 64px rgba(0,0,0,0.3),
+    inset 0 1px 0 rgba(255,255,255,0.08);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   LIQUID GLASS BUTTONS
+═══════════════════════════════════════════════════════════════ */
+.liq {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  user-select: none;
+  background: linear-gradient(
+    150deg,
+    rgba(255,255,255,0.24) 0%,
+    rgba(255,255,255,0.06) 100%
+  );
+  backdrop-filter: blur(18px) saturate(180%);
+  -webkit-backdrop-filter: blur(18px) saturate(180%);
+  border: 1px solid rgba(255,255,255,0.26);
+  box-shadow:
+    0 1px 3px rgba(0,0,0,0.1),
+    0 4px 10px rgba(0,0,0,0.12),
+    inset 0 1px 0 rgba(255,255,255,0.48),
+    inset 0 -1px 0 rgba(0,0,0,0.06);
+  transition:
+    transform 0.22s cubic-bezier(0.34, 1.56, 0.64, 1),
+    box-shadow 0.2s ease,
+    border-color 0.2s ease,
+    background 0.2s ease;
+  overflow: hidden;
+}
+
+/* Specular highlight blob */
+.liq::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    circle at 28% 22%,
+    rgba(255,255,255,0.3) 0%,
+    transparent 58%
+  );
+  pointer-events: none;
+}
+
+.liq:hover {
+  transform: translateY(-2px) scale(1.05);
+  border-color: rgba(255,255,255,0.38);
+  box-shadow:
+    0 3px 8px rgba(0,0,0,0.14),
+    0 8px 22px rgba(0,0,0,0.18),
+    inset 0 1px 0 rgba(255,255,255,0.58);
+}
+
+.liq:active {
+  transform: translateY(1px) scale(0.97);
+  box-shadow:
+    0 1px 2px rgba(0,0,0,0.1),
+    inset 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.liq:disabled {
+  opacity: 0.38;
+  pointer-events: none;
+}
+
+/* Gold variant */
+.liq-gold {
+  background: linear-gradient(
+    150deg,
+    rgba(240,215,140,0.22) 0%,
+    rgba(201,168,76,0.08) 100%
+  );
+  border-color: rgba(201,168,76,0.35);
+}
+
+.liq-gold:hover {
+  border-color: rgba(240,215,140,0.5);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   SKEUOMORPHIC ELEMENTS
+═══════════════════════════════════════════════════════════════ */
+
+/* Paper page shadow (depth illusion) */
+.page-shadow-right {
+  box-shadow:
+    inset -8px 0 20px rgba(0,0,0,0.12),
+    inset 0 0 40px rgba(180,150,100,0.06);
+}
+
+.page-shadow-left {
+  box-shadow:
+    inset 8px 0 20px rgba(0,0,0,0.12),
+    inset 0 0 40px rgba(180,150,100,0.06);
+}
+
+/* Book spine gradient */
+.spine-glow {
+  background: linear-gradient(
+    90deg,
+    rgba(0,0,0,0.38) 0%,
+    rgba(0,0,0,0.14) 30%,
+    transparent 100%
+  );
+}
+
+/* Page vignette edges */
+.page-vignette {
+  background: radial-gradient(
+    ellipse at 50% 50%,
+    transparent 68%,
+    rgba(160,130,90,0.09) 100%
+  );
+}
+
+/* Washi tape strip */
+.tape {
+  position: absolute;
+  top: -10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 52px;
+  height: 18px;
+  border-radius: 2px;
+  backdrop-filter: blur(4px);
+  box-shadow: 0 1px 4px rgba(0,0,0,0.14);
+  z-index: 10;
+}
+
+/* Note folded corner */
+.fold-corner {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 0;
+  height: 0;
+  border-style: solid;
+  border-width: 0 0 20px 20px;
+  border-color: transparent transparent rgba(0,0,0,0.1) transparent;
+  pointer-events: none;
+  z-index: 5;
+}
+
+/* Coffee ring stain */
+.coffee-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2.5px solid rgba(110, 65, 25, 0.11);
+  pointer-events: none;
+}
+
+/* Gold foil text */
+.gold-foil {
+  background: linear-gradient(
+    135deg,
+    var(--gold-shine) 0%,
+    var(--gold)       28%,
+    var(--gold-lt)    52%,
+    var(--gold-dk)    74%,
+    var(--gold)       100%
+  );
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+}
+
+/* Ink input — handwritten feel */
+.ink-input {
+  width: 100%;
+  background: transparent;
+  resize: none;
+  border: none;
+  outline: none;
+  font-family: 'Gochi Hand', cursive;
+  font-size: 19px;
+  line-height: 28px;
+  color: var(--ink);
+  letter-spacing: 0.012em;
+  caret-color: var(--ink-md);
+}
+
+.ink-input::placeholder {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+/* Note handwriting */
+.note-text {
+  width: 100%;
+  background: transparent;
+  resize: none;
+  border: none;
+  outline: none;
+  font-family: 'Patrick Hand', cursive;
+  font-size: 17px;
+  line-height: 1.58;
+  color: var(--ink);
+  caret-color: var(--ink-md);
+}
+
+.note-text::placeholder {
+  color: rgba(28,15,12,0.32);
+  font-style: italic;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   3D UTILITIES
+═══════════════════════════════════════════════════════════════ */
+.persp-book  { perspective: 2600px; perspective-origin: 50% 42%; }
+.p3d         { transform-style: preserve-3d; }
+.bfh         { backface-visibility: hidden; -webkit-backface-visibility: hidden; }
+
+/* ═══════════════════════════════════════════════════════════════
+   PAGE FLIP ANIMATIONS
+═══════════════════════════════════════════════════════════════ */
+@keyframes flip-next {
+  0%   { transform: rotateY(0deg); }
+  38%  { transform: rotateY(-82deg) translateZ(26px); }
+  62%  { transform: rotateY(-98deg) translateZ(26px); }
+  100% { transform: rotateY(-180deg); }
+}
+
+@keyframes flip-prev {
+  0%   { transform: rotateY(-180deg); }
+  38%  { transform: rotateY(-98deg)  translateZ(26px); }
+  62%  { transform: rotateY(-82deg)  translateZ(26px); }
+  100% { transform: rotateY(0deg); }
+}
+
+.anim-flip-next {
+  animation: flip-next 0.72s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.anim-flip-prev {
+  animation: flip-prev 0.72s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   GENERAL ANIMATIONS
+═══════════════════════════════════════════════════════════════ */
+@keyframes fade-up {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px)  rotateX(8deg) rotateY(-6deg); }
+  50%       { transform: translateY(-9px) rotateX(8deg) rotateY(-6deg); }
+}
+
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes rec-pulse {
+  0%, 100% { box-shadow: 0 0 0 0   rgba(217, 92, 92, 0.5); }
+  70%       { box-shadow: 0 0 0 8px rgba(217, 92, 92, 0); }
+}
+
+@keyframes stamp-in {
+  0%   { transform: scale(1.4) rotate(-4deg); opacity: 0; }
+  65%  { transform: scale(0.96) rotate(0.5deg); }
+  100% { transform: scale(1) rotate(0deg); opacity: 1; }
+}
+
+@keyframes note-drop {
+  0%   { transform: translateY(-12px) rotate(var(--note-rot, 0deg)); opacity: 0; }
+  60%  { transform: translateY(3px)   rotate(var(--note-rot, 0deg)); }
+  100% { transform: translateY(0px)   rotate(var(--note-rot, 0deg)); opacity: 1; }
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   UTILITY HELPERS
+═══════════════════════════════════════════════════════════════ */
+.anim-fade-up   { animation: fade-up   0.32s ease forwards; }
+.anim-fade-in   { animation: fade-in   0.22s ease forwards; }
+.anim-float     { animation: float     5.5s  ease-in-out infinite; }
+.anim-note-drop { animation: note-drop 0.28s cubic-bezier(0.34,1.56,0.64,1) forwards; }
+
+/* Presence dot */
+.presence-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 2px rgba(91,175,130,0.28);
+  flex-shrink: 0;
+}
+
+/* Divider rule */
+.gold-rule {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(201,168,76,0.42),
+    transparent
+  );
+}
+/* ═══════════════════════════════════════════════════════════════
+   BOOK LIGHTING & DEPTH
+═══════════════════════════════════════════════════════════════ */
+
+/* Simulates overhead light on right page — bright top, shadowed bottom */
+.page-light-right {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.12) 0%,
+      rgba(255,255,255,0.04) 30%,
+      transparent 60%,
+      rgba(0,0,0,0.04) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(0,0,0,0.09) 0%,    /* spine shadow */
+      rgba(0,0,0,0.03) 8%,
+      transparent 20%,
+      rgba(255,255,255,0.03) 80%,
+      rgba(0,0,0,0.02) 100%
+    );
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+}
+
+/* Left page — dimmer, light comes from right */
+.page-light-left {
+  background:
+    linear-gradient(
+      180deg,
+      rgba(255,255,255,0.07) 0%,
+      transparent 40%,
+      rgba(0,0,0,0.05) 100%
+    ),
+    linear-gradient(
+      90deg,
+      rgba(255,255,255,0.02) 0%,
+      transparent 60%,
+      rgba(0,0,0,0.1) 92%,   /* spine shadow */
+      rgba(0,0,0,0.18) 100%
+    );
+  pointer-events: none;
+  position: absolute;
+  inset: 0;
+  z-index: 15;
+}
+
+/* Deep gutter shadow at spine — the most important depth cue */
+.spine-gutter-right {
+  position: absolute;
+  top: 0; bottom: 0; left: 0;
+  width: 48px;
+  background: linear-gradient(
+    90deg,
+    rgba(0,0,0,0.22) 0%,
+    rgba(0,0,0,0.1) 40%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 16;
+}
+
+.spine-gutter-left {
+  position: absolute;
+  top: 0; bottom: 0; right: 0;
+  width: 48px;
+  background: linear-gradient(
+    270deg,
+    rgba(0,0,0,0.22) 0%,
+    rgba(0,0,0,0.1) 40%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 16;
+}
+
+/* Leather gloss streak */
+.leather-gloss {
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 45%;
+  background: linear-gradient(
+    160deg,
+    rgba(255,255,255,0.07) 0%,
+    rgba(255,255,255,0.03) 35%,
+    transparent 65%
+  );
+  pointer-events: none;
+  border-radius: inherit;
+}
+
+/* Book ground shadow */
+.book-ground-shadow {
+  position: absolute;
+  bottom: -28px;
+  left: 5%;
+  right: 5%;
+  height: 28px;
+  background: radial-gradient(
+    ellipse at 50% 0%,
+    rgba(0,0,0,0.55) 0%,
+    rgba(0,0,0,0.2) 50%,
+    transparent 100%
+  );
+  pointer-events: none;
+  filter: blur(6px);
+}

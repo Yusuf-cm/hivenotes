@@ -1,0 +1,36 @@
+# Environment files — NEVER commit these
+.env
+.env.local
+.env.production
+.env.development
+server/.env
+web/.env.local
+web/.env.production
+
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build output
+dist/
+.next/
+out/
+
+# Prisma generated
+server/node_modules/.prisma/
+
+# Uploads (user files — not for git)
+server/uploads/*
+!server/uploads/.gitkeep
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+
+# Editor
+.vscode/
+.idea/

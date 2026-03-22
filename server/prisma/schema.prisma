@@ -1,0 +1,62 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Room {
+  id           String   @id @default(uuid())
+  code         String   @unique
+  passwordHash String
+  createdAt    DateTime @default(now())
+
+  pages        Page[]
+  notes        Note[]
+  users        ActiveUser[]
+}
+
+model ActiveUser {
+  id       String @id @default(uuid())
+  nickname String
+  roomId   String
+  room     Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId])
+}
+
+model Page {
+  id        String   @id @default(uuid())
+  roomId    String
+  pageIndex Int
+  text      String   @default("")
+  updatedAt DateTime @updatedAt
+
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, pageIndex])
+  @@index([roomId])
+}
+
+model Note {
+  id         String   @id @default(uuid())
+  roomId     String
+  pageIndex  Int      @default(0)
+  authorId   String
+  authorName String
+  content    String   @default("")
+  color      String   @default("amber")
+  x          Float    @default(80)
+  y          Float    @default(80)
+  zIndex     Int      @default(1)
+  mediaType  String   @default("none")
+  mediaUrl   String?
+  checkboxes Json     @default("[]")
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+
+  @@index([roomId, pageIndex])
+}

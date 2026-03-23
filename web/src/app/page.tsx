@@ -145,16 +145,19 @@ function BoardInner({ user }: { user: AuthUser }) {
         height: isMobile ? '100%' : 'auto',
       }}>
         {isMobile ? (
-          <MobilePage
-            user={user}
-            notes={notes}
-            getText={getText}
-            updateText={updateText}
-            ensurePage={ensurePage}
-            noteActions={noteActions}
-            onAddNote={handleAddNote}
-          />
-        ) : (
+  <MobilePage
+    user={user}
+    notes={notes}
+    getText={getText}
+    updateText={updateText}
+    ensurePage={ensurePage}
+    noteActions={noteActions}
+    onAddNote={handleAddNote}
+    onAI={() => setShowAI(true)}
+    onShare={() => setShowShare(true)}
+    onAudio={handleAudio}
+  />
+) : (
           <Book
             user={user}
             notes={notes}

@@ -1,8 +1,9 @@
 'use client'
 
-import { useState, useCallback } from 'react'
+import { useState } from 'react'
 import { Note, AuthUser } from '@/types'
 import StickyNote from '@/components/notes/StickyNote'
+import { useRecorder } from '@/hooks/useRecorder'
 
 interface NoteActions {
   update:     (id: string, delta: Partial<Note>) => void
@@ -18,6 +19,9 @@ interface Props {
   ensurePage:  (idx: number) => void
   noteActions: NoteActions
   onAddNote:   (pageIndex: number, x: number, y: number) => void
+  onAI:        () => void
+  onShare:     () => void
+  onAudio:     (url: string) => void
 }
 
 const today = new Date().toLocaleDateString('en-US', {
@@ -27,9 +31,12 @@ const today = new Date().toLocaleDateString('en-US', {
 export default function MobilePage({
   user, notes, getText, updateText,
   ensurePage, noteActions, onAddNote,
+  onAI, onShare, onAudio,
 }: Props) {
-  const [pi,       setPi]       = useState(0)
-  const [navOpen,  setNavOpen]  = useState(false)
+  const [pi,      setPi]      = useState(0)
+  const [navOpen, setNavOpen] = useState(false)
+
+  const { recording, seconds, start, stop } = useRecorder(onAudio)
 
   const notesOnPage = notes.filter(n => n.pageIndex === pi)
 
@@ -180,7 +187,6 @@ export default function MobilePage({
       </div>
 
       {/* ── Floating toggle button ─────────────────────────── */}
-      {/* Always visible, can't be hidden by safe area */}
       <button
         onClick={() => setNavOpen(o => !o)}
         style={{
@@ -188,27 +194,28 @@ export default function MobilePage({
           bottom: 24, right: 20,
           width: 52, height: 52,
           borderRadius: '50%',
-          background: 'rgba(28,8,5,0.92)',
+          background: recording ? 'rgba(217,92,92,0.9)' : 'rgba(28,8,5,0.92)',
           backdropFilter: 'blur(20px)',
           WebkitBackdropFilter: 'blur(20px)',
-          border: '1px solid rgba(201,168,76,0.35)',
+          border: `1px solid ${recording ? 'rgba(217,92,92,0.6)' : 'rgba(201,168,76,0.35)'}`,
           boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 22, color: 'var(--gold-lt)',
+          fontSize: 22, color: recording ? '#fff' : 'var(--gold-lt)',
           zIndex: 999, cursor: 'pointer',
-          transition: 'transform .2s ease',
+          transition: 'transform .2s ease, background .2s ease',
           transform: navOpen ? 'rotate(45deg)' : 'rotate(0deg)',
+          animation: recording ? 'rec-pulse 1.2s ease infinite' : 'none',
         }}
       >
-        {navOpen ? '×' : '☰'}
+        {recording ? `⏹` : navOpen ? '×' : '☰'}
       </button>
 
       {/* ── Slide-up nav panel ─────────────────────────────── */}
       <div style={{
         position: 'fixed',
         left: 0, right: 0,
-        bottom: navOpen ? 0 : '-280px',
-        height: 260,
+        bottom: navOpen ? 0 : '-400px',
+        height: 380,
         background: 'rgba(18,6,3,0.96)',
         backdropFilter: 'blur(30px)',
         WebkitBackdropFilter: 'blur(30px)',
@@ -217,7 +224,7 @@ export default function MobilePage({
         zIndex: 998,
         transition: 'bottom .3s cubic-bezier(0.34,1.56,0.64,1)',
         padding: '20px 24px 40px',
-        display: 'flex', flexDirection: 'column', gap: 16,
+        display: 'flex', flexDirection: 'column', gap: 14,
       }}>
 
         {/* Drag handle */}
@@ -254,7 +261,10 @@ export default function MobilePage({
             fontSize: 16, color: 'rgba(245,237,216,0.6)',
             letterSpacing: '.15em', textAlign: 'center',
           }}>
-            <div style={{fontSize: 11, color: 'rgba(245,237,216,0.3)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 2}}>
+            <div style={{
+              fontSize: 11, color: 'rgba(245,237,216,0.3)',
+              letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 2,
+            }}>
               Page
             </div>
             {pi + 1}
@@ -273,7 +283,59 @@ export default function MobilePage({
           >›</button>
         </div>
 
-        {/* Room code + logout row */}
+        {/* Action buttons */}
+        <div style={{ display: 'flex', gap: 10 }}>
+          <button
+            onClick={() => { onAI(); setNavOpen(false) }}
+            style={{
+              flex: 1, padding: '12px 0',
+              borderRadius: 12,
+              background: 'rgba(201,168,76,0.12)',
+              border: '1px solid rgba(201,168,76,0.22)',
+              color: 'var(--gold-lt)',
+              fontFamily: 'var(--font-cormorant)',
+              fontSize: 15, cursor: 'pointer',
+            }}
+          >
+            ✦ AI
+          </button>
+
+          <button
+            onClick={() => { onShare(); setNavOpen(false) }}
+            style={{
+              flex: 1, padding: '12px 0',
+              borderRadius: 12,
+              background: 'rgba(255,255,255,0.06)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: 'var(--cream)',
+              fontFamily: 'var(--font-cormorant)',
+              fontSize: 15, cursor: 'pointer',
+            }}
+          >
+            ⇧ Share
+          </button>
+
+          <button
+            onClick={() => {
+              if (recording) { stop(); setNavOpen(false) }
+              else start()
+            }}
+            style={{
+              flex: 1, padding: '12px 0',
+              borderRadius: 12,
+              background: recording ? 'rgba(217,92,92,0.15)' : 'rgba(255,255,255,0.06)',
+              border: `1px solid ${recording ? 'rgba(217,92,92,0.3)' : 'rgba(255,255,255,0.1)'}`,
+              color: recording ? 'var(--red)' : 'var(--cream)',
+              fontFamily: 'var(--font-cormorant)',
+              fontSize: 15, cursor: 'pointer',
+              animation: recording ? 'rec-pulse 1.2s ease infinite' : 'none',
+            }}
+          >
+            {recording ? `⏹ ${seconds}s` : '🎙 Rec'}
+          </button>
+        </div>
+
+        {/* Room code + logout */}
         <div style={{
           display: 'flex', alignItems: 'center',
           justifyContent: 'space-between', gap: 10,
@@ -284,8 +346,18 @@ export default function MobilePage({
             borderRadius: 10, padding: '10px 14px',
             border: '1px solid rgba(255,255,255,0.07)',
           }}>
-            <div style={{fontSize: 9, letterSpacing: '.22em', textTransform: 'uppercase', color: 'rgba(245,237,216,0.3)', fontFamily: 'var(--font-cormorant)', marginBottom: 3}}>Room</div>
-            <div style={{fontFamily: 'monospace', fontSize: 16, letterSpacing: '.18em', color: 'var(--gold-lt)'}}>
+            <div style={{
+              fontSize: 9, letterSpacing: '.22em',
+              textTransform: 'uppercase',
+              color: 'rgba(245,237,216,0.3)',
+              fontFamily: 'var(--font-cormorant)', marginBottom: 3,
+            }}>
+              Room
+            </div>
+            <div style={{
+              fontFamily: 'monospace', fontSize: 16,
+              letterSpacing: '.18em', color: 'var(--gold-lt)',
+            }}>
               {user.roomCode}
             </div>
           </div>
@@ -309,7 +381,7 @@ export default function MobilePage({
         </div>
       </div>
 
-      {/* Backdrop when nav open */}
+      {/* Backdrop */}
       {navOpen && (
         <div
           onClick={() => setNavOpen(false)}

@@ -52,15 +52,18 @@ export default function MobilePage({
 
       {/* ── Mobile top bar ─────────────────────────────────── */}
       <div style={{
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '12px 16px',
-        background: 'rgba(28,8,5,0.85)',
-        backdropFilter: 'blur(20px)',
-        borderBottom: '1px solid rgba(201,168,76,0.15)',
-        flexShrink: 0,
-        zIndex: 50,
-      }}>
+  display: 'flex', alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '12px 16px',
+  paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
+  background: 'rgba(28,8,5,0.92)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  borderBottom: '1px solid rgba(201,168,76,0.15)',
+  flexShrink: 0,
+  zIndex: 100,
+  minHeight: 56,
+}}>
         <div style={{
           fontFamily: 'var(--font-imfell)',
           fontSize: 18, fontStyle: 'italic',
@@ -184,15 +187,19 @@ export default function MobilePage({
 
       {/* ── Mobile bottom nav ──────────────────────────────── */}
       <div style={{
-        display: 'flex', alignItems: 'center',
-        justifyContent: 'space-between',
-        padding: '10px 20px',
-        background: 'rgba(28,8,5,0.85)',
-        backdropFilter: 'blur(20px)',
-        borderTop: '1px solid rgba(201,168,76,0.15)',
-        flexShrink: 0,
-        paddingBottom: 'max(10px, env(safe-area-inset-bottom))',
-      }}>
+  display: 'flex', alignItems: 'center',
+  justifyContent: 'space-between',
+  padding: '10px 20px',
+  background: 'rgba(28,8,5,0.92)',
+  backdropFilter: 'blur(20px)',
+  WebkitBackdropFilter: 'blur(20px)',
+  borderTop: '1px solid rgba(201,168,76,0.15)',
+  flexShrink: 0,
+  position: 'relative',
+  zIndex: 100,
+  paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
+  minHeight: 60,
+}}>
         {/* Prev */}
         <button
           onClick={goPrev}

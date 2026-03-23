@@ -1,4 +1,4 @@
-import type { Metadata } from 'next'
+import type { Metadata, Viewport } from 'next'
 import { Cormorant_Garamond, IM_Fell_English, Patrick_Hand, Gochi_Hand } from 'next/font/google'
 import './globals.css'
 
@@ -36,11 +36,15 @@ export const metadata: Metadata = {
   title: 'HiveNotes — The Living Manuscript',
   description: 'A real-time collaborative notebook',
 }
-export const viewport = {
+
+export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 }
+
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${cormorant.variable} ${imFell.variable} ${patrickHand.variable} ${gochiHand.variable}`}>

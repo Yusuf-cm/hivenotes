@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useCallback } from 'react'
-import { Note, Page, AuthUser } from '@/types'
+import { Note, AuthUser } from '@/types'
 import StickyNote from '@/components/notes/StickyNote'
 
 interface NoteActions {
@@ -28,18 +28,21 @@ export default function MobilePage({
   user, notes, getText, updateText,
   ensurePage, noteActions, onAddNote,
 }: Props) {
-  const [pi, setPi] = useState(0)
+  const [pi,       setPi]       = useState(0)
+  const [navOpen,  setNavOpen]  = useState(false)
 
   const notesOnPage = notes.filter(n => n.pageIndex === pi)
 
   const goNext = () => {
     ensurePage(pi + 1)
     setPi(p => p + 1)
+    setNavOpen(false)
   }
 
   const goPrev = () => {
     if (pi === 0) return
     setPi(p => p - 1)
+    setNavOpen(false)
   }
 
   return (
@@ -50,20 +53,18 @@ export default function MobilePage({
       overflow: 'hidden',
     }}>
 
-      {/* ── Mobile top bar ─────────────────────────────────── */}
+      {/* ── Top bar ────────────────────────────────────────── */}
       <div style={{
-  display: 'flex', alignItems: 'center',
-  justifyContent: 'space-between',
-  padding: '12px 16px',
-  paddingTop: 'calc(12px + env(safe-area-inset-top, 0px))',
-  background: 'rgba(28,8,5,0.92)',
-  backdropFilter: 'blur(20px)',
-  WebkitBackdropFilter: 'blur(20px)',
-  borderBottom: '1px solid rgba(201,168,76,0.15)',
-  flexShrink: 0,
-  zIndex: 100,
-  minHeight: 56,
-}}>
+        display: 'flex', alignItems: 'center',
+        justifyContent: 'space-between',
+        padding: '14px 16px',
+        background: 'rgba(28,8,5,0.92)',
+        backdropFilter: 'blur(20px)',
+        WebkitBackdropFilter: 'blur(20px)',
+        borderBottom: '1px solid rgba(201,168,76,0.15)',
+        flexShrink: 0,
+        zIndex: 100,
+      }}>
         <div style={{
           fontFamily: 'var(--font-imfell)',
           fontSize: 18, fontStyle: 'italic',
@@ -74,32 +75,26 @@ export default function MobilePage({
         </div>
 
         <div style={{
-          display: 'flex', alignItems: 'center', gap: 8,
+          fontFamily: 'var(--font-cormorant)',
+          fontSize: 13, color: 'rgba(245,237,216,0.5)',
+          letterSpacing: '.1em',
         }}>
-          {/* Page indicator */}
-          <div style={{
-            fontFamily: 'var(--font-cormorant)',
-            fontSize: 13, color: 'rgba(245,237,216,0.5)',
-            letterSpacing: '.1em',
-          }}>
-            Entry {pi + 1}
-          </div>
-
-          {/* Add note */}
-          <button
-            onClick={() => onAddNote(pi, 40, 100)}
-            style={{
-              background: 'rgba(201,168,76,0.15)',
-              border: '1px solid rgba(201,168,76,0.25)',
-              borderRadius: 8, padding: '5px 10px',
-              fontFamily: 'var(--font-cormorant)',
-              fontSize: 13, color: 'var(--gold-lt)',
-              cursor: 'pointer',
-            }}
-          >
-            + Note
-          </button>
+          Entry {pi + 1}
         </div>
+
+        <button
+          onClick={() => onAddNote(pi, 40, 100)}
+          style={{
+            background: 'rgba(201,168,76,0.15)',
+            border: '1px solid rgba(201,168,76,0.25)',
+            borderRadius: 8, padding: '6px 12px',
+            fontFamily: 'var(--font-cormorant)',
+            fontSize: 14, color: 'var(--gold-lt)',
+            cursor: 'pointer',
+          }}
+        >
+          + Note
+        </button>
       </div>
 
       {/* ── Page content ───────────────────────────────────── */}
@@ -111,7 +106,6 @@ export default function MobilePage({
           display: 'flex', flexDirection: 'column',
         }}
       >
-        {/* Lighting */}
         <div className="page-light-right"/>
         <div className="spine-gutter-right"/>
 
@@ -146,7 +140,7 @@ export default function MobilePage({
             placeholder="Begin writing…"
             style={{
               position: 'absolute', inset: 0,
-              padding: '8px 20px 40px 24px',
+              padding: '8px 20px 80px 24px',
               height: '100%',
               fontSize: 16,
             }}
@@ -185,56 +179,147 @@ export default function MobilePage({
         </div>
       </div>
 
-      {/* ── Mobile bottom nav ──────────────────────────────── */}
-      <div style={{
-  display: 'flex', alignItems: 'center',
-  justifyContent: 'space-between',
-  padding: '10px 20px 34px 20px',
-  background: 'rgba(28,8,5,0.92)',
-  backdropFilter: 'blur(20px)',
-  WebkitBackdropFilter: 'blur(20px)',
-  borderTop: '1px solid rgba(201,168,76,0.15)',
-  flexShrink: 0,
-  position: 'relative',
-  zIndex: 100,
-  minHeight: 80,
-}}>
-        {/* Prev */}
-        <button
-          onClick={goPrev}
-          disabled={pi === 0}
-          style={{
-            width: 40, height: 40, borderRadius: '50%',
-            background: pi === 0 ? 'transparent' : 'rgba(255,255,255,0.08)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            color: pi === 0 ? 'rgba(245,237,216,0.2)' : 'var(--cream)',
-            fontSize: 22, cursor: pi === 0 ? 'default' : 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >‹</button>
+      {/* ── Floating toggle button ─────────────────────────── */}
+      {/* Always visible, can't be hidden by safe area */}
+      <button
+        onClick={() => setNavOpen(o => !o)}
+        style={{
+          position: 'fixed',
+          bottom: 24, right: 20,
+          width: 52, height: 52,
+          borderRadius: '50%',
+          background: 'rgba(28,8,5,0.92)',
+          backdropFilter: 'blur(20px)',
+          WebkitBackdropFilter: 'blur(20px)',
+          border: '1px solid rgba(201,168,76,0.35)',
+          boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          fontSize: 22, color: 'var(--gold-lt)',
+          zIndex: 999, cursor: 'pointer',
+          transition: 'transform .2s ease',
+          transform: navOpen ? 'rotate(45deg)' : 'rotate(0deg)',
+        }}
+      >
+        {navOpen ? '×' : '☰'}
+      </button>
 
-        {/* Room code */}
+      {/* ── Slide-up nav panel ─────────────────────────────── */}
+      <div style={{
+        position: 'fixed',
+        left: 0, right: 0,
+        bottom: navOpen ? 0 : '-280px',
+        height: 260,
+        background: 'rgba(18,6,3,0.96)',
+        backdropFilter: 'blur(30px)',
+        WebkitBackdropFilter: 'blur(30px)',
+        borderTop: '1px solid rgba(201,168,76,0.2)',
+        borderRadius: '20px 20px 0 0',
+        zIndex: 998,
+        transition: 'bottom .3s cubic-bezier(0.34,1.56,0.64,1)',
+        padding: '20px 24px 40px',
+        display: 'flex', flexDirection: 'column', gap: 16,
+      }}>
+
+        {/* Drag handle */}
         <div style={{
-          fontFamily: 'monospace', fontSize: 13,
-          letterSpacing: '.18em',
-          color: 'rgba(240,215,140,0.35)',
+          width: 36, height: 4,
+          background: 'rgba(255,255,255,0.15)',
+          borderRadius: 2,
+          margin: '0 auto 4px',
+        }}/>
+
+        {/* Page navigation */}
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between',
+          background: 'rgba(255,255,255,0.04)',
+          borderRadius: 14, padding: '10px 16px',
+          border: '1px solid rgba(255,255,255,0.07)',
         }}>
-          {user.roomCode}
+          <button
+            onClick={goPrev}
+            disabled={pi === 0}
+            style={{
+              width: 40, height: 40, borderRadius: '50%',
+              background: pi === 0 ? 'transparent' : 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: pi === 0 ? 'rgba(245,237,216,0.2)' : 'var(--cream)',
+              fontSize: 24, cursor: pi === 0 ? 'default' : 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >‹</button>
+
+          <div style={{
+            fontFamily: 'var(--font-cormorant)',
+            fontSize: 16, color: 'rgba(245,237,216,0.6)',
+            letterSpacing: '.15em', textAlign: 'center',
+          }}>
+            <div style={{fontSize: 11, color: 'rgba(245,237,216,0.3)', letterSpacing: '.2em', textTransform: 'uppercase', marginBottom: 2}}>
+              Page
+            </div>
+            {pi + 1}
+          </div>
+
+          <button
+            onClick={goNext}
+            style={{
+              width: 40, height: 40, borderRadius: '50%',
+              background: 'rgba(255,255,255,0.08)',
+              border: '1px solid rgba(255,255,255,0.1)',
+              color: 'var(--cream)', fontSize: 24,
+              cursor: 'pointer',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+            }}
+          >›</button>
         </div>
 
-        {/* Next */}
-        <button
-          onClick={goNext}
-          style={{
-            width: 40, height: 40, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.08)',
-            border: '1px solid rgba(255,255,255,0.1)',
-            color: 'var(--cream)', fontSize: 22,
-            cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-          }}
-        >›</button>
+        {/* Room code + logout row */}
+        <div style={{
+          display: 'flex', alignItems: 'center',
+          justifyContent: 'space-between', gap: 10,
+        }}>
+          <div style={{
+            flex: 1,
+            background: 'rgba(255,255,255,0.04)',
+            borderRadius: 10, padding: '10px 14px',
+            border: '1px solid rgba(255,255,255,0.07)',
+          }}>
+            <div style={{fontSize: 9, letterSpacing: '.22em', textTransform: 'uppercase', color: 'rgba(245,237,216,0.3)', fontFamily: 'var(--font-cormorant)', marginBottom: 3}}>Room</div>
+            <div style={{fontFamily: 'monospace', fontSize: 16, letterSpacing: '.18em', color: 'var(--gold-lt)'}}>
+              {user.roomCode}
+            </div>
+          </div>
+
+          <button
+            onClick={() => {
+              localStorage.removeItem('hn_user')
+              window.location.reload()
+            }}
+            style={{
+              padding: '10px 16px', borderRadius: 10,
+              background: 'rgba(217,92,92,0.12)',
+              border: '1px solid rgba(217,92,92,0.2)',
+              color: 'rgba(217,92,92,0.7)',
+              fontFamily: 'var(--font-cormorant)',
+              fontSize: 14, cursor: 'pointer',
+            }}
+          >
+            Sign out
+          </button>
+        </div>
       </div>
+
+      {/* Backdrop when nav open */}
+      {navOpen && (
+        <div
+          onClick={() => setNavOpen(false)}
+          style={{
+            position: 'fixed', inset: 0,
+            zIndex: 997,
+            background: 'rgba(0,0,0,0.3)',
+          }}
+        />
+      )}
     </div>
   )
 }

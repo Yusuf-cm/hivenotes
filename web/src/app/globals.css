@@ -617,3 +617,31 @@ html, body {
   pointer-events: none;
   filter: blur(6px);
 }
+/* ═══════════════════════════════════════════════════════════════
+   RESPONSIVE / MOBILE
+═══════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .book-desktop-only { display: none !important; }
+
+  .mobile-page {
+    position: fixed;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  .ink-input {
+    font-size: 16px !important; /* Prevents iOS zoom on focus */
+    line-height: 28px;
+    padding-left: 24px !important; /* No margin line on mobile */
+  }
+
+  .note-text {
+    font-size: 16px !important; /* Prevents iOS zoom */
+  }
+}
+
+@media (min-width: 769px) {
+  .mobile-only { display: none !important; }
+}

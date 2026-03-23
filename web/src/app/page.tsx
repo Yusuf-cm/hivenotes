@@ -11,6 +11,7 @@ import { usePages } from '@/hooks/usePages'
 import { roomApi } from '@/lib/api'
 import ShareModal from '@/components/ui/ShareModal'
 import AIPanel from '@/components/ui/AIPanel'
+import MobilePage from '@/components/book/MobilePage'
 
 function BoardInner({ user }: { user: AuthUser }) {
   const [showShare,    setShowShare]    = useState(false)
@@ -18,6 +19,14 @@ function BoardInner({ user }: { user: AuthUser }) {
   const [initialNotes, setInitialNotes] = useState<Note[]>([])
   const [initialPages, setInitialPages] = useState<Page[]>([])
   const [roomLoaded,   setRoomLoaded]   = useState(false)
+  const [isMobile, setIsMobile] = useState(false)
+
+  useEffect(() => {
+  const check = () => setIsMobile(window.innerWidth < 769)
+  check()
+  window.addEventListener('resize', check)
+  return () => window.removeEventListener('resize', check)
+}, [])
 
   const { presence } = useSocketContext()
 
@@ -122,30 +131,44 @@ const res = await fetch(`${API}/upload`, {
         zIndex: 0,
       }}/>
 
-      <div style={{ position: 'relative', zIndex: 1, marginTop: 40 }}>
-        <Book
-          user={user}
-          notes={notes}
-          pages={initialPages}
-          getText={getText}
-          updateText={updateText}
-          ensurePage={ensurePage}
-          noteActions={noteActions}
-          onAddNote={handleAddNote}
-        />
-      </div>
+      <div style={{ position: 'relative', zIndex: 1, marginTop: isMobile ? 0 : 40 }}>
+  {isMobile ? (
+    <MobilePage
+      user={user}
+      notes={notes}
+      getText={getText}
+      updateText={updateText}
+      ensurePage={ensurePage}
+      noteActions={noteActions}
+      onAddNote={handleAddNote}
+    />
+  ) : (
+    <Book
+      user={user}
+      notes={notes}
+      pages={initialPages}
+      getText={getText}
+      updateText={updateText}
+      ensurePage={ensurePage}
+      noteActions={noteActions}
+      onAddNote={handleAddNote}
+    />
+  )}
+</div>
 
-      <Toolbar
-        user={user}
-        onAddNote={() => handleAddNote(0, 80, 120)}
-        onAudio={handleAudio}
-        onShare={() => setShowShare(true)}
-        onAI={() => setShowAI(true)}
-        onLogout={() => {
-          localStorage.removeItem('hn_user')
-          window.location.reload()
-        }}
-      />
+      {!isMobile && (
+  <Toolbar
+    user={user}
+    onAddNote={() => handleAddNote(0, 80, 120)}
+    onAudio={handleAudio}
+    onShare={() => setShowShare(true)}
+    onAI={() => setShowAI(true)}
+    onLogout={() => {
+      localStorage.removeItem('hn_user')
+      window.location.reload()
+    }}
+  />
+)}
 
       {showShare && (
         <ShareModal

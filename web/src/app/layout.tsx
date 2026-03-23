@@ -36,7 +36,11 @@ export const metadata: Metadata = {
   title: 'HiveNotes — The Living Manuscript',
   description: 'A real-time collaborative notebook',
 }
-
+export const viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+}
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${cormorant.variable} ${imFell.variable} ${patrickHand.variable} ${gochiHand.variable}`}>

@@ -31,6 +31,9 @@ const groq = async (system: string, messages: {role:string; content:string}[], m
 }
 
 export async function POST(req: NextRequest) {
+  console.log('GROQ_API_KEY present:', !!process.env.GROQ_API_KEY)
+  console.log('GROQ_API_KEY prefix:', process.env.GROQ_API_KEY?.slice(0, 8))
+  
   if (!process.env.GROQ_API_KEY) {
     return NextResponse.json({ error: 'GROQ_API_KEY not set' }, { status: 500 })
   }

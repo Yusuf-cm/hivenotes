@@ -189,7 +189,7 @@ export default function MobilePage({
       <div style={{
   display: 'flex', alignItems: 'center',
   justifyContent: 'space-between',
-  padding: '10px 20px',
+  padding: '10px 20px 34px 20px',
   background: 'rgba(28,8,5,0.92)',
   backdropFilter: 'blur(20px)',
   WebkitBackdropFilter: 'blur(20px)',
@@ -197,8 +197,7 @@ export default function MobilePage({
   flexShrink: 0,
   position: 'relative',
   zIndex: 100,
-  paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
-  minHeight: 60,
+  minHeight: 80,
 }}>
         {/* Prev */}
         <button

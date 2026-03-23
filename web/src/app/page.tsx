@@ -19,17 +19,19 @@ function BoardInner({ user }: { user: AuthUser }) {
   const [initialNotes, setInitialNotes] = useState<Note[]>([])
   const [initialPages, setInitialPages] = useState<Page[]>([])
   const [roomLoaded,   setRoomLoaded]   = useState(false)
-  const [isMobile, setIsMobile] = useState(false)
+  const [isMobile,     setIsMobile]     = useState<boolean | null>(null)
 
+  // ── Mobile detection — must know screen size before rendering ─
   useEffect(() => {
-  const check = () => setIsMobile(window.innerWidth < 769)
-  check()
-  window.addEventListener('resize', check)
-  return () => window.removeEventListener('resize', check)
-}, [])
+    const check = () => setIsMobile(window.innerWidth < 769)
+    check()
+    window.addEventListener('resize', check)
+    return () => window.removeEventListener('resize', check)
+  }, [])
 
   const { presence } = useSocketContext()
 
+  // ── Fetch room data on mount ──────────────────────────────
   useEffect(() => {
     roomApi.get(user.roomCode, user.token)
       .then(room => {
@@ -60,13 +62,13 @@ function BoardInner({ user }: { user: AuthUser }) {
   }, [addNote])
 
   const handleAudio = useCallback(async (audioUrl: string) => {
+    const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
     try {
       const blob      = await fetch(audioUrl).then(r => r.blob())
       const file      = new File([blob], `voice-${Date.now()}.webm`, { type: 'audio/webm' })
       const form      = new FormData()
       form.append('file', file)
-      const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
-const res = await fetch(`${API}/upload`, {
+      const res       = await fetch(`${API}/upload`, {
         method:  'POST',
         headers: { Authorization: `Bearer ${user.token}` },
         body:    form,
@@ -89,7 +91,8 @@ const res = await fetch(`${API}/upload`, {
     }
   }, [addNote, user.token])
 
-  if (!roomLoaded) {
+  // ── Loading states ────────────────────────────────────────
+  if (isMobile === null || !roomLoaded) {
     return (
       <div className="tex-wood" style={{
         width: '100vw', height: '100vh',
@@ -117,58 +120,68 @@ const res = await fetch(`${API}/upload`, {
         overflow: 'hidden', position: 'relative',
       }}
     >
-      {/* Desk vignette */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse at 50% 44%,transparent 24%,rgba(0,0,0,0.56) 100%)',
-        zIndex: 0,
-      }}/>
-
-      {/* Desk spotlight */}
-      <div style={{
-        position: 'absolute', inset: 0, pointerEvents: 'none',
-        background: 'radial-gradient(ellipse 60% 40% at 50% 52%,rgba(255,220,150,0.04) 0%,transparent 70%)',
-        zIndex: 0,
-      }}/>
-
-      <div style={{ position: 'relative', zIndex: 1, marginTop: isMobile ? 0 : 40 }}>
-  {isMobile ? (
-    <MobilePage
-      user={user}
-      notes={notes}
-      getText={getText}
-      updateText={updateText}
-      ensurePage={ensurePage}
-      noteActions={noteActions}
-      onAddNote={handleAddNote}
-    />
-  ) : (
-    <Book
-      user={user}
-      notes={notes}
-      pages={initialPages}
-      getText={getText}
-      updateText={updateText}
-      ensurePage={ensurePage}
-      noteActions={noteActions}
-      onAddNote={handleAddNote}
-    />
-  )}
-</div>
-
+      {/* Desk vignette — desktop only */}
       {!isMobile && (
-  <Toolbar
-    user={user}
-    onAddNote={() => handleAddNote(0, 80, 120)}
-    onAudio={handleAudio}
-    onShare={() => setShowShare(true)}
-    onAI={() => setShowAI(true)}
-    onLogout={() => {
-      localStorage.removeItem('hn_user')
-      window.location.reload()
-    }}
-  />
-)}
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'radial-gradient(ellipse at 50% 44%,transparent 24%,rgba(0,0,0,0.56) 100%)',
+          zIndex: 0,
+        }}/>
+      )}
+
+      {/* Desk spotlight — desktop only */}
+      {!isMobile && (
+        <div style={{
+          position: 'absolute', inset: 0, pointerEvents: 'none',
+          background: 'radial-gradient(ellipse 60% 40% at 50% 52%,rgba(255,220,150,0.04) 0%,transparent 70%)',
+          zIndex: 0,
+        }}/>
+      )}
+
+      <div style={{
+        position: 'relative', zIndex: 1,
+        marginTop: isMobile ? 0 : 40,
+        width: isMobile ? '100%' : 'auto',
+        height: isMobile ? '100%' : 'auto',
+      }}>
+        {isMobile ? (
+          <MobilePage
+            user={user}
+            notes={notes}
+            getText={getText}
+            updateText={updateText}
+            ensurePage={ensurePage}
+            noteActions={noteActions}
+            onAddNote={handleAddNote}
+          />
+        ) : (
+          <Book
+            user={user}
+            notes={notes}
+            pages={initialPages}
+            getText={getText}
+            updateText={updateText}
+            ensurePage={ensurePage}
+            noteActions={noteActions}
+            onAddNote={handleAddNote}
+          />
+        )}
+      </div>
+
+      {/* Toolbar — desktop only */}
+      {!isMobile && (
+        <Toolbar
+          user={user}
+          onAddNote={() => handleAddNote(0, 80, 120)}
+          onAudio={handleAudio}
+          onShare={() => setShowShare(true)}
+          onAI={() => setShowAI(true)}
+          onLogout={() => {
+            localStorage.removeItem('hn_user')
+            window.location.reload()
+          }}
+        />
+      )}
 
       {showShare && (
         <ShareModal

@@ -54,9 +54,13 @@ export const initWebSocket = (server: Server): void => {
 
   // In dev, allow all origins
   const origin  = req.headers.origin
-const allowed = [config.clientUrl, 'http://localhost:3000']
+const isAllowed =
+  !origin ||
+  origin === config.clientUrl ||
+  origin === 'http://localhost:3000' ||
+  /https:\/\/hivenotes.*\.vercel\.app$/.test(origin)
 
-if (origin && !allowed.includes(origin)) {
+if (!isAllowed) {
   ws.close(4003, 'Origin not allowed')
   return
 }

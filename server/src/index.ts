@@ -16,13 +16,17 @@ const app = express()
 app.use(cors({
   origin: (origin, callback) => {
     const allowed = [
-      config.clientUrl,
       'http://localhost:3000',
+      'https://hivenotes.vercel.app',
     ]
-    // Allow requests with no origin (mobile apps, curl)
-    if (!origin || allowed.includes(origin)) {
+
+    // Allow all Vercel preview deployments for this project
+    const isVercelPreview = origin?.match(/https:\/\/hivenotes.*\.vercel\.app$/)
+
+    if (!origin || allowed.includes(origin) || isVercelPreview) {
       callback(null, true)
     } else {
+      console.log('[cors] blocked:', origin)
       callback(new Error(`CORS blocked: ${origin}`))
     }
   },

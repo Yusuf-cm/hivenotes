@@ -9,11 +9,12 @@ import { handleMessage } from './handlers'
 // ── Types ─────────────────────────────────────────────────────
 
 export interface Client {
-  ws:       WebSocket
-  userId:   string
-  nickname: string
-  roomId:   string
-  roomCode: string
+  ws:           WebSocket
+  userId:       string
+  nickname:     string
+  roomId:       string
+  roomCode:     string
+  currentPage?: number
 }
 
 // roomCode → Set of connected clients
@@ -45,44 +46,62 @@ export const broadcast = (
   }
 }
 
+export const broadcastByPage = (
+  roomCode: string,
+  pageIndex: number,
+  event:    string,
+  data:     unknown,
+  exclude?: string
+): void => {
+  const room = rooms.get(roomCode)
+  if (!room) return
+
+  const message = JSON.stringify({ event, data })
+
+  for (const client of room) {
+    if (exclude && client.userId === exclude) continue
+    if (client.currentPage !== pageIndex) continue
+    if (client.ws.readyState === WebSocket.OPEN) {
+      client.ws.send(message)
+    }
+  }
+}
+
 // ── Boot ──────────────────────────────────────────────────────
 
 export const initWebSocket = (server: Server): void => {
   const wss = new WebSocketServer({ server, path: '/ws' })
 
- wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
+  wss.on('connection', (ws: WebSocket, req: IncomingMessage) => {
+    const origin = req.headers.origin
+    const isAllowed =
+      !origin ||
+      origin === config.clientUrl ||
+      origin === 'http://localhost:3000' ||
+      /^https:\/\/hivenotes-[a-z0-9-]+\.vercel\.app$/.test(origin)
 
-  // In dev, allow all origins
-  const origin  = req.headers.origin
-const isAllowed =
-  !origin ||
-  origin === config.clientUrl ||
-  origin === 'http://localhost:3000' ||
-  /https:\/\/hivenotes.*\.vercel\.app$/.test(origin)
+    if (!isAllowed) {
+      ws.close(4003, 'Origin not allowed')
+      return
+    }
 
-if (!isAllowed) {
-  ws.close(4003, 'Origin not allowed')
-  return
-}
+    // Extract token from query string
+    const url = new URL(req.url!, `http://${req.headers.host}`)
+    const token = url.searchParams.get('token')
 
-  // Extract token from query string
-  // Extract token from query string
-const url   = new URL(req.url!, `http://${req.headers.host}`)
-const token = url.searchParams.get('token')
+    if (!token) {
+      ws.close(4001, 'Missing token')
+      return
+    }
 
-if (!token) {
-  ws.close(4001, 'Missing token')
-  return
-}
-
-// Verify JWT
-let payload: JwtPayload
-try {
-  payload = jwt.verify(token, config.jwtSecret) as unknown as JwtPayload
-} catch {
-  ws.close(4001, 'Invalid token')
-  return
-}
+    // Verify JWT
+    let payload: JwtPayload
+    try {
+      payload = jwt.verify(token, config.jwtSecret) as unknown as JwtPayload
+    } catch {
+      ws.close(4001, 'Invalid token')
+      return
+    }
 
     // Register client
     const client: Client = {
@@ -113,10 +132,14 @@ try {
     // ── Incoming messages ──────────────────────────────────────
     ws.on('message', (raw: Buffer) => {
       try {
-        const { event, data } = JSON.parse(raw.toString())
-        handleMessage(client, event, data)
+        const msg = JSON.parse(raw.toString())
+        if (!msg.event || typeof msg.event !== 'string') {
+          console.warn('[ws] Invalid message: missing or invalid event')
+          return
+        }
+        handleMessage(client, msg.event, msg.data || {})
       } catch (err) {
-        console.error('[ws] Bad message', err)
+        console.error('[ws] Message parse error:', err instanceof Error ? err.message : 'Unknown error')
       }
     })
 

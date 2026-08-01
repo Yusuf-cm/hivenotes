@@ -9,8 +9,8 @@ export const useNotes = (initialNotes: Note[], user: AuthUser) => {
   const [notes, setNotes] = useState<Note[]>(initialNotes)
 
   useEffect(() => {
-  if (initialNotes.length > 0) setNotes(initialNotes)
-}, [initialNotes.length])
+    if (initialNotes.length > 0) setNotes(initialNotes)
+  }, []) // Only run on mount
 
   // ── Listen for WS events ──────────────────────────────────
   useEffect(() => {
@@ -35,53 +35,51 @@ export const useNotes = (initialNotes: Note[], user: AuthUser) => {
 
   // ── Actions ───────────────────────────────────────────────
   const addNote = useCallback((
-  pageIndex: number,
-  x: number,
-  y: number,
-  overrides: Partial<Note> = {}
-) => {
-  const tempId = `temp-${Date.now()}`
-  const optimistic: Note = {
-    id:         tempId,
-    roomId:     user.roomId,
-    pageIndex,
-    authorId:   user.userId,
-    authorName: user.nickname,
-    content:    '',
-    color:      'sky',
-    x, y,
-    zIndex:     notes.length + 1,
-    mediaType:  'none',
-    mediaUrl:   null,
-    checkboxes: [],
-    createdAt:  new Date().toISOString(),
-    updatedAt:  new Date().toISOString(),
-    ...overrides,  // ← applied last so caller wins
-  }
+    pageIndex: number,
+    x: number,
+    y: number,
+    overrides: Partial<Note> = {}
+  ) => {
+    const tempId = `temp-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+    const optimistic: Note = {
+      id:         tempId,
+      roomId:     user.roomId,
+      pageIndex,
+      authorId:   user.userId,
+      authorName: user.nickname,
+      content:    '',
+      color:      'sky',
+      x, y,
+      zIndex:     notes.length + 1,
+      mediaType:  'none',
+      mediaUrl:   null,
+      checkboxes: [],
+      createdAt:  new Date().toISOString(),
+      updatedAt:  new Date().toISOString(),
+      ...overrides,
+    }
 
-  setNotes(prev => [...prev, optimistic])
+    setNotes(prev => [...prev, optimistic])
 
-  socket.send('note:create', {
-    pageIndex,
-    content:    optimistic.content,
-    color:      optimistic.color,
-    x, y,
-    zIndex:     optimistic.zIndex,
-    mediaType:  optimistic.mediaType,
-    mediaUrl:   optimistic.mediaUrl,
-    checkboxes: [],
-    ...overrides,
-  })
+    socket.send('note:create', {
+      pageIndex,
+      content:    optimistic.content,
+      color:      optimistic.color,
+      x, y,
+      zIndex:     optimistic.zIndex,
+      mediaType:  optimistic.mediaType,
+      mediaUrl:   optimistic.mediaUrl,
+      checkboxes: [],
+      ...overrides,
+    })
 
-  const off = socket.on('note:created', (note: Note) => {
-    setNotes(prev =>
-      prev.filter(n => n.id !== tempId).concat(
-        prev.find(n => n.id === note.id) ? [] : [note]
-      )
-    )
-    off()
-  })
-}, [notes.length, user])
+    const handleCreated = (note: Note) => {
+      setNotes(prev => prev.map(n => n.id === tempId ? note : n))
+      socket.off('note:created', handleCreated)
+    }
+
+    socket.on('note:created', handleCreated)
+  }, [notes.length, user])
 
   const updateNote = useCallback((id: string, delta: Partial<Note>) => {
     // Optimistic update

@@ -20,12 +20,12 @@ export const useAuth = () => {
     setLoading(false)
   }, [])
 
-  const finalise = async (token: string, roomCode: string, nickname: string): Promise<AuthUser> => {
+  const finalise = async (userId: string, token: string, roomCode: string, nickname: string): Promise<AuthUser> => {
     // Fetch room to get real roomId
     const room = await roomApi.get(roomCode, token)
 
     const authUser: AuthUser = {
-      userId:   crypto.randomUUID(),
+      userId,
       nickname,
       roomId:   room.id,
       roomCode: room.code,
@@ -41,7 +41,7 @@ export const useAuth = () => {
     setError(null)
     try {
       const res = await authApi.create(nickname, password)
-      return await finalise(res.token, res.roomCode, res.nickname)
+      return await finalise(res.userId, res.token, res.roomCode, res.nickname)
     } catch (e: any) {
       setError(e.message)
       throw e
@@ -52,7 +52,7 @@ export const useAuth = () => {
     setError(null)
     try {
       const res = await authApi.join(nickname, roomCode, password)
-      return await finalise(res.token, res.roomCode, res.nickname)
+      return await finalise(res.userId, res.token, res.roomCode, res.nickname)
     } catch (e: any) {
       setError(e.message)
       throw e

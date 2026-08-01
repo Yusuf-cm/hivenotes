@@ -11,17 +11,21 @@ model Room {
   code         String   @unique
   passwordHash String
   createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   pages        Page[]
   notes        Note[]
   users        ActiveUser[]
+
+  @@index([createdAt])
 }
 
 model ActiveUser {
-  id       String @id @default(uuid())
-  nickname String
-  roomId   String
-  room     Room   @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  id        String   @id @default(uuid())
+  nickname  String   @db.VarChar(50)
+  roomId    String
+  createdAt DateTime @default(now())
+  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@index([roomId])
 }
@@ -30,33 +34,54 @@ model Page {
   id        String   @id @default(uuid())
   roomId    String
   pageIndex Int
-  text      String   @default("")
+  text      String   @default("") @db.VarChar(10000)
+  version   Int      @default(0)
   updatedAt DateTime @updatedAt
 
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  room        Room             @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  operations  PageOperation[]
 
   @@unique([roomId, pageIndex])
   @@index([roomId])
+  @@index([updatedAt])
+}
+
+model PageOperation {
+  id        String   @id @default(uuid())
+  pageId    String
+  version   Int
+  type      String   // 'insert' | 'delete'
+  index     Int
+  content   String   @db.VarChar(5000)
+  userId    String
+  createdAt DateTime @default(now())
+
+  page      Page     @relation(fields: [pageId], references: [id], onDelete: Cascade)
+
+  @@index([pageId, version])
+  @@index([createdAt])
 }
 
 model Note {
   id         String   @id @default(uuid())
   roomId     String
   pageIndex  Int      @default(0)
-  authorId   String
-  authorName String
-  content    String   @default("")
-  color      String   @default("amber")
+  authorId   String   @db.VarChar(36)
+  authorName String   @db.VarChar(50)
+  content    String   @default("") @db.VarChar(5000)
+  color      String   @default("amber") @db.VarChar(20)
   x          Float    @default(80)
   y          Float    @default(80)
   zIndex     Int      @default(1)
-  mediaType  String   @default("none")
-  mediaUrl   String?
+  mediaType  String   @default("none") @db.VarChar(20)
+  mediaUrl   String?  @db.VarChar(2000)
   checkboxes Json     @default("[]")
+  version    Int      @default(1)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
   room       Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@index([roomId, pageIndex])
+  @@index([createdAt])
 }

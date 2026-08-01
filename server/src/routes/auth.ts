@@ -1,10 +1,15 @@
 import { Router, Request, Response } from 'express'
 import bcrypt from 'bcryptjs'
 import { v4 as uuid } from 'uuid'
+import { randomBytes } from 'crypto'
 import { prisma } from '../lib/prisma'
 import { signToken } from '../middleware/auth'
 
 const router = Router()
+
+const generateRoomCode = (): string => {
+  return randomBytes(3).toString('hex').toUpperCase()
+}
 
 // ── POST /auth/create ─────────────────────────────────────────
 // Creates a new room + issues JWT for the creator
@@ -16,12 +21,22 @@ router.post('/create', async (req: Request, res: Response): Promise<void> => {
     return
   }
 
+  if (nickname.trim().length > 50) {
+    res.status(400).json({ error: 'nickname must be 50 characters or less' })
+    return
+  }
+
+  if (password.length < 6) {
+    res.status(400).json({ error: 'password must be at least 6 characters' })
+    return
+  }
+
   try {
     // Generate unique 6-char room code
     let code: string
     let exists = true
     do {
-      code = Math.random().toString(36).slice(2, 8).toUpperCase()
+      code = generateRoomCode()
       exists = !!(await prisma.room.findUnique({ where: { code } }))
     } while (exists)
 
@@ -50,7 +65,7 @@ router.post('/create', async (req: Request, res: Response): Promise<void> => {
       roomCode: room.code,
     })
 
-    res.status(201).json({ token, roomCode: room.code, nickname: nickname.trim() })
+    res.status(201).json({ token, roomCode: room.code, nickname: nickname.trim(), userId })
   } catch (err) {
     console.error('[auth/create]', err)
     res.status(500).json({ error: 'Failed to create room' })
@@ -67,9 +82,19 @@ router.post('/join', async (req: Request, res: Response): Promise<void> => {
     return
   }
 
+  if (nickname.trim().length > 50) {
+    res.status(400).json({ error: 'nickname must be 50 characters or less' })
+    return
+  }
+
+  if (password.length < 6) {
+    res.status(400).json({ error: 'password must be at least 6 characters' })
+    return
+  }
+
   try {
     const room = await prisma.room.findUnique({
-      where: { code: roomCode.toUpperCase() }
+      where: { code: roomCode.trim().toUpperCase() }
     })
 
     if (!room) {
@@ -95,7 +120,7 @@ router.post('/join', async (req: Request, res: Response): Promise<void> => {
       roomCode: room.code,
     })
 
-    res.status(200).json({ token, roomCode: room.code, nickname: nickname.trim() })
+    res.status(200).json({ token, roomCode: room.code, nickname: nickname.trim(), userId })
   } catch (err) {
     console.error('[auth/join]', err)
     res.status(500).json({ error: 'Failed to join room' })

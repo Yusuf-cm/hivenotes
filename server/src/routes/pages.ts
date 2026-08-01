@@ -11,13 +11,18 @@ router.patch('/:pageIndex', requireAuth, async (req: Request, res: Response): Pr
   const pageIndex = parseInt(String(req.params.pageIndex), 10)
   const { text } = req.body
 
-  if (isNaN(pageIndex) || pageIndex < 0) {
+  if (isNaN(pageIndex) || pageIndex < 0 || pageIndex > 9999) {
     res.status(400).json({ error: 'Invalid pageIndex' })
     return
   }
 
   if (typeof text !== 'string') {
     res.status(400).json({ error: 'text must be a string' })
+    return
+  }
+
+  if (text.length > 10000) {
+    res.status(400).json({ error: 'text must be 10000 characters or less' })
     return
   }
 

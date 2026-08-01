@@ -27,13 +27,13 @@ const req = async <T>(
 // ── Auth ──────────────────────────────────────────────────────
 export const authApi = {
   create: (nickname: string, password: string) =>
-    req<{ token: string; roomCode: string; nickname: string }>(
+    req<{ token: string; roomCode: string; nickname: string; userId: string }>(
       '/auth/create',
       { method: 'POST', body: JSON.stringify({ nickname, password }) }
     ),
 
   join: (nickname: string, roomCode: string, password: string) =>
-    req<{ token: string; roomCode: string; nickname: string }>(
+    req<{ token: string; roomCode: string; nickname: string; userId: string }>(
       '/auth/join',
       { method: 'POST', body: JSON.stringify({ nickname, roomCode, password }) }
     ),

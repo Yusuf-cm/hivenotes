@@ -60,18 +60,28 @@ export interface Room {
 }
 
 // ── WebSocket Events ──────────────────────────────────────────
+
+export interface OTOperation {
+  type: 'insert' | 'delete'
+  index: number
+  content: string
+}
+
 // Events the CLIENT sends to server
 export type ClientEvent =
   | { event: 'note:create'; data: Omit<Note, 'id'|'roomId'|'authorId'|'authorName'|'createdAt'|'updatedAt'> }
   | { event: 'note:update'; data: { id: string } & Partial<Note> }
   | { event: 'note:delete'; data: { id: string } }
+  | { event: 'page:edit'; data: { pageIndex: number; type: 'insert' | 'delete'; index: number; content: string; version: number } }
   | { event: 'page:update'; data: { pageIndex: number; text: string } }
+  | { event: 'page:view'; data: { pageIndex: number } }
 
 // Events the SERVER sends to client
 export type ServerEvent =
   | { event: 'note:created';   data: Note }
   | { event: 'note:updated';   data: Note }
   | { event: 'note:deleted';   data: { id: string } }
+  | { event: 'page:edited';    data: { pageIndex: number; operation: OTOperation; version: number; userId: string } }
   | { event: 'page:updated';   data: { pageIndex: number; text: string } }
   | { event: 'user:joined';    data: { userId: string; nickname: string } }
   | { event: 'user:left';      data: { userId: string; nickname: string } }

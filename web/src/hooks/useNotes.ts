@@ -73,12 +73,17 @@ export const useNotes = (initialNotes: Note[], user: AuthUser) => {
       ...overrides,
     })
 
+    // One-shot listener: swap the optimistic note for the server's copy, then
+    // detach. socket.on returns its own unsubscribe function - there is no
+    // socket.off - so hold onto it rather than trying to remove by reference.
+    let unsubscribe: (() => void) | undefined
+
     const handleCreated = (note: Note) => {
       setNotes(prev => prev.map(n => n.id === tempId ? note : n))
-      socket.off('note:created', handleCreated)
+      unsubscribe?.()
     }
 
-    socket.on('note:created', handleCreated)
+    unsubscribe = socket.on('note:created', handleCreated)
   }, [notes.length, user])
 
   const updateNote = useCallback((id: string, delta: Partial<Note>) => {

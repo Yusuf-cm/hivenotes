@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Page" ADD COLUMN "ink" JSONB NOT NULL DEFAULT '[]';

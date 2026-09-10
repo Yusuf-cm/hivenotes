@@ -1,0 +1,9 @@
+-- Study hive: cited sources + studio fields on class revision
+
+ALTER TABLE "ClassRevision" ADD COLUMN IF NOT EXISTS "sources" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE "ClassRevision" ADD COLUMN IF NOT EXISTS "glossary" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE "ClassRevision" ADD COLUMN IF NOT EXISTS "faq" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE "ClassRevision" ADD COLUMN IF NOT EXISTS "quiz" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE "ClassRevision" ADD COLUMN IF NOT EXISTS "gaps" JSONB NOT NULL DEFAULT '[]';
+ALTER TABLE "ClassRevision" ADD COLUMN IF NOT EXISTS "audioScript" TEXT NOT NULL DEFAULT '';
+ALTER TABLE "ClassRevision" ADD COLUMN IF NOT EXISTS "audioUrl" VARCHAR(2000);

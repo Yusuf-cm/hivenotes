@@ -16,6 +16,7 @@ import { initWebSocket } from './ws/server'
 import { rateLimit } from './middleware/rateLimit'
 import { securityHeaders } from './middleware/securityHeaders'
 import { startFileCleanup } from './lib/fileCleanup'
+import { startKeepAlive } from './keepalive'
 
 const app = express()
 app.set('trust proxy', 1)
@@ -146,6 +147,7 @@ server.listen(config.port, '0.0.0.0', () => {
   console.log(`   Files → http://0.0.0.0:${config.port}/files\n`)
   initWebSocket(server)
   startFileCleanup()
+  startKeepAlive()
 })
 
 export { server, app }

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <rect width="1024" height="1024" fill="#2A1810"/>
+  <rect x="168" y="128" width="688" height="768" rx="28" fill="#F4E6C8"/>
+  <rect x="168" y="128" width="52" height="768" fill="#8B2E2E"/>
+  <g stroke="#C9A84C" stroke-width="6" opacity="0.55">
+    <line x1="280" y1="280" x2="800" y2="280"/>
+    <line x1="280" y1="360" x2="800" y2="360"/>
+    <line x1="280" y1="440" x2="800" y2="440"/>
+    <line x1="280" y1="520" x2="800" y2="520"/>
+    <line x1="280" y1="600" x2="800" y2="600"/>
+    <line x1="280" y1="680" x2="800" y2="680"/>
+  </g>
+  <text x="280" y="430" font-family="Georgia, serif" font-size="92" font-style="italic" fill="#1C0F0C">Hive</text>
+  <text x="280" y="540" font-family="Georgia, serif" font-size="92" font-style="italic" fill="#1C0F0C">Notes</text>
+  <circle cx="780" cy="220" r="28" fill="#C9A84C"/>
+</svg>

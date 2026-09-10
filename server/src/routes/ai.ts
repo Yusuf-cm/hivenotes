@@ -11,6 +11,7 @@ import { buildRoomSources, parseJsonLoose, studioFromModel } from '../lib/roomCo
 import { broadcast } from '../ws/server'
 import { cache } from '../lib/cache'
 import { config } from '../config'
+import { canCompileNow, hiveStatus, isTeacher } from '../lib/hive'
 
 const router = Router()
 
@@ -230,6 +231,24 @@ router.post('/compile', requireAuth, async (req: Request, res: Response): Promis
   if (missingKey(res)) return
 
   try {
+    const room = await prisma.room.findUnique({ where: { id: req.user!.roomId } })
+    if (!room) {
+      res.status(404).json({ error: 'Room not found' })
+      return
+    }
+    if (!isTeacher(room, req.user!.userId)) {
+      res.status(403).json({ error: 'Only the teacher can compile the class revision' })
+      return
+    }
+    if (!canCompileNow(room, req.user!.userId)) {
+      res.status(402).json({
+        error: 'Your class already wrote the lecture. Unlock Hive Pro for more compiles.',
+        needsPro: true,
+        code: 'HIVE_PRO',
+      })
+      return
+    }
+
     const pending = await prisma.note.findMany({
       where: {
         roomId: req.user!.roomId,
@@ -250,7 +269,7 @@ router.post('/compile', requireAuth, async (req: Request, res: Response): Promis
 
     const { sources, context } = await buildRoomSources(req.user!.roomId, { readDiagrams: true })
     if (!context.trim()) {
-      res.status(400).json({ error: 'Nothing in the journals to compile yet' })
+      res.status(400).json({ error: 'Write or capture first — the class journals are empty.' })
       return
     }
 
@@ -300,8 +319,13 @@ router.post('/compile', requireAuth, async (req: Request, res: Response): Promis
       },
     })
 
+    const billed = await prisma.room.update({
+      where: { id: room.id },
+      data: { compileCount: { increment: 1 } },
+    })
+
     broadcast(req.user!.roomCode, 'revision:updated', revision)
-    res.json({ revision })
+    res.json({ revision, ...hiveStatus(billed, req.user!.userId) })
   } catch (err: any) {
     console.error('[ai/compile]', err)
     res.status(500).json({ error: err.message || 'Compile failed' })

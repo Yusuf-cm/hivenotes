@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=https://render.com/schema/render.yaml.json
+databases:
+  - name: hivenotes-db
+    plan: free
+    postgresMajorVersion: "16"
+    databaseName: hivenotes
+
+services:
+  - type: web
+    name: hivenotes-api
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: server
+    buildCommand: npm ci --include=dev && npx prisma generate && npm run build
+    preDeployCommand: npx prisma migrate deploy
+    startCommand: node dist/index.js
+    healthCheckPath: /health
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: PORT
+        value: "10000"
+      - key: DATABASE_URL
+        fromDatabase:
+          name: hivenotes-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: CLIENT_URL
+        fromService:
+          name: hivenotes-web
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: GROQ_API_KEY
+        sync: false
+      - key: REVENUECAT_SECRET_API_KEY
+        sync: false
+      - key: REVENUECAT_WEB_API_KEY
+        sync: false
+      - key: REVENUECAT_WEBHOOK_SECRET
+        sync: false
+      - key: REVENUECAT_ENTITLEMENT
+        value: hive_pro
+
+  - type: web
+    name: hivenotes-web
+    runtime: node
+    plan: free
+    region: oregon
+    rootDir: web
+    buildCommand: npm ci --include=dev && npm run build
+    startCommand: npx next start -H 0.0.0.0
+    healthCheckPath: /
+    envVars:
+      - key: NODE_VERSION
+        value: "22"
+      - key: INTERNAL_API_URL
+        fromService:
+          name: hivenotes-api
+          type: web
+          property: hostport
+      - key: PUBLIC_API_URL
+        fromService:
+          name: hivenotes-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: PUBLIC_WS_URL
+        fromService:
+          name: hivenotes-api
+          type: web
+          envVarKey: RENDER_EXTERNAL_URL
+      - key: NEXT_PUBLIC_RC_API_KEY
+        sync: false
+      - key: NEXT_PUBLIC_RC_ENTITLEMENT
+        value: hive_pro

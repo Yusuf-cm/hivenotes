@@ -13,6 +13,7 @@ import { usePages } from '@/hooks/usePages'
 import { roomApi } from '@/lib/api'
 import { socket } from '@/lib/socket'
 import { processMedia, uploadMedia, aiHandwriting } from '@/lib/media'
+import { mergeHiveUser } from '@/lib/billing'
 import { InkStroke, InkTool, WriteMode, parseInk, strokeBounds } from '@/lib/ink'
 import { rasterizeInkPng } from '@/lib/inkPng'
 import { insertOnRuledLine, lineIndexFromY, colFromX } from '@/lib/pageLines'
@@ -21,7 +22,7 @@ import AIPanel from '@/components/ui/AIPanel'
 import StudyDesk from '@/components/ui/StudyDesk'
 import MobilePage from '@/components/book/MobilePage'
 
-function BoardInner({ user }: { user: AuthUser }) {
+function BoardInner({ user, onUser }: { user: AuthUser; onUser: (user: AuthUser) => void }) {
   const [showShare,    setShowShare]    = useState(false)
   const [showAI,       setShowAI]       = useState(false)
   const [initialNotes, setInitialNotes] = useState<Note[]>([])
@@ -69,6 +70,7 @@ function BoardInner({ user }: { user: AuthUser }) {
             : { elements: [] },
         })))
         setRevision(room.revision || null)
+        onUser(mergeHiveUser(user, room))
         setCurrentPage(0)
         setViewingOwnerId(user.userId)
         try {
@@ -583,6 +585,7 @@ function BoardInner({ user }: { user: AuthUser }) {
             setCurrentPage(0)
             setShowAI(false)
           }}
+          onUser={onUser}
           onClose={() => setShowAI(false)}
         />
       )}
@@ -604,7 +607,7 @@ export default function Home() {
 
   return (
     <SocketProvider user={user}>
-      <BoardInner user={user} />
+      <BoardInner user={user} onUser={setUser} />
     </SocketProvider>
   )
 }

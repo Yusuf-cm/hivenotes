@@ -2,8 +2,9 @@ import type { Metadata, Viewport } from 'next'
 import './globals.css'
 
 export const metadata: Metadata = {
-  title: 'HiveNotes — The Living Manuscript',
-  description: 'A real-time collaborative notebook',
+  title: 'HiveNotes',
+  description: 'A written classroom notebook. Compile the hive.',
+  icons: { icon: '/icon-1024.png' },
 }
 
 export const viewport: Viewport = {
@@ -26,6 +27,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
       </head>
       <body className="tex-wood overflow-hidden">
+        {process.env.PUBLIC_WS_URL ? (
+          <script
+            dangerouslySetInnerHTML={{
+              __html: `window.__HN_WS__=${JSON.stringify(process.env.PUBLIC_WS_URL)};`,
+            }}
+          />
+        ) : null}
         {children}
       </body>
     </html>

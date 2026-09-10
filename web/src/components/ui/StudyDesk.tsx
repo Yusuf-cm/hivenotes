@@ -2,8 +2,7 @@
 
 import { useMemo, useState } from 'react'
 import { AuthUser, ClassRevision, RevisionSource, StudioItem } from '@/types'
-
-const API = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000'
+import { apiBase } from '@/lib/backend'
 
 type Tab = 'guide' | 'glossary' | 'faq' | 'quiz' | 'gaps' | 'listen' | 'sources'
 
@@ -30,7 +29,7 @@ const asSources = (v: unknown): RevisionSource[] => Array.isArray(v) ? v as Revi
 const fileUrl = (url?: string | null) => {
   if (!url) return ''
   if (url.startsWith('http')) return url
-  return `${API}${url}`
+  return `${apiBase()}${url}`
 }
 
 const renderGuide = (text: string) => {

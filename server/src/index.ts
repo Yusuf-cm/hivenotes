@@ -11,6 +11,7 @@ import pageRoutes  from './routes/pages'
 import noteRoutes  from './routes/notes'
 import uploadRoutes from './routes/upload'
 import aiRoutes from './routes/ai'
+import billingRoutes from './routes/billing'
 import { initWebSocket } from './ws/server'
 import { rateLimit } from './middleware/rateLimit'
 import { securityHeaders } from './middleware/securityHeaders'
@@ -96,6 +97,7 @@ app.use('/pages', rateLimit(15 * 60 * 1000, 200), pageRoutes)
 app.use('/notes', rateLimit(15 * 60 * 1000, 200), noteRoutes)
 app.use('/upload', rateLimit(15 * 60 * 1000, 80), uploadRoutes)
 app.use('/ai', rateLimit(15 * 60 * 1000, 160), aiRoutes)
+app.use('/billing', rateLimit(15 * 60 * 1000, 80), billingRoutes)
 
 
 // ── Global error handler ─────────────────────────────────────
@@ -138,10 +140,10 @@ const gracefulShutdown = async () => {
 process.on('SIGTERM', gracefulShutdown)
 process.on('SIGINT', gracefulShutdown)
 
-server.listen(config.port, () => {
+server.listen(config.port, '0.0.0.0', () => {
   console.log(`\n🐝  HiveNotes server running`)
-  console.log(`   HTTP  → http://localhost:${config.port}`)
-  console.log(`   Files → http://localhost:${config.port}/files\n`)
+  console.log(`   HTTP  → http://0.0.0.0:${config.port}`)
+  console.log(`   Files → http://0.0.0.0:${config.port}/files\n`)
   initWebSocket(server)
   startFileCleanup()
 })

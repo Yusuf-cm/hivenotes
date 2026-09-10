@@ -4,6 +4,7 @@ import { requireAuth } from '../middleware/auth'
 import { cache } from '../lib/cache'
 import { ensureOwnedPage } from '../lib/ownedPage'
 import { broadcast } from '../ws/server'
+import { hiveStatus } from '../lib/hive'
 
 const router = Router()
 
@@ -73,6 +74,14 @@ router.get('/:code', requireAuth, async (req: Request, res: Response): Promise<v
       cache.set(cacheKey, totalNotes, 2 * 60 * 1000)
     }
 
+    if (!room.teacherUserId) {
+      await prisma.room.update({
+        where: { id: room.id },
+        data: { teacherUserId: req.user!.userId },
+      })
+      room.teacherUserId = req.user!.userId
+    }
+
     res.json({
       id:           room.id,
       code:         room.code,
@@ -84,6 +93,7 @@ router.get('/:code', requireAuth, async (req: Request, res: Response): Promise<v
       notesPage:    page,
       notesPerPage: NOTES_PER_PAGE,
       createdAt:    room.createdAt,
+      ...hiveStatus(room, req.user!.userId),
     })
   } catch (err) {
     console.error('[rooms/get]', err)

@@ -176,7 +176,7 @@ export default function LoginScreen({ onLogin }: Props) {
             color: 'rgba(245,237,216,0.4)',
             marginBottom: 20,
           }}>
-            Your living manuscript awaits
+            Your own book. This class’s hive.
           </p>
 
           <div className="gold-rule" style={{marginBottom: 20}}/>

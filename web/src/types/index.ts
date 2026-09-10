@@ -6,6 +6,11 @@ export interface AuthUser {
   roomCode:  string
   token:     string
   pageIndex?: number
+  isTeacher?: boolean
+  plan?:     'free' | 'pro'
+  compileCount?: number
+  canCompile?: boolean
+  needsPro?: boolean
 }
 
 // ── Checkbox ──────────────────────────────────────────────────
@@ -104,6 +109,11 @@ export interface Room {
   notes:      Note[]
   revision?:  ClassRevision | null
   createdAt:  string
+  isTeacher?: boolean
+  plan?:      'free' | 'pro'
+  compileCount?: number
+  canCompile?: boolean
+  needsPro?: boolean
 }
 
 // ── WebSocket Events ──────────────────────────────────────────

@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { AuthUser } from '@/types'
 import { authApi, roomApi } from '@/lib/api'
+import { mergeHiveUser } from '@/lib/billing'
 
 const STORAGE_KEY = 'hn_user'
 
@@ -29,16 +30,15 @@ export const useAuth = () => {
   ): Promise<AuthUser> => {
     const room = await roomApi.get(roomCode, token)
 
-    const authUser: AuthUser = {
+    const authUser = mergeHiveUser({
       userId,
       nickname,
       roomId:    room.id,
       roomCode:  room.code,
       token,
       pageIndex: room.pageIndex ?? pageIndex,
-    }
+    }, room)
 
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(authUser))
     setUser(authUser)
     return authUser
   }

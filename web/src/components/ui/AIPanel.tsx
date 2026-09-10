@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import { AuthUser, ClassRevision, Note, Page } from '@/types'
 import { aiChat, aiCompile } from '@/lib/media'
+import { fetchHiveStatus, HIVE_PRICE, mergeHiveUser, purchaseHivePro, syncHivePro } from '@/lib/billing'
 
 interface Message {
   role:    'user' | 'assistant'
@@ -16,6 +17,7 @@ interface Props {
   pages:  Page[]
   journals?: { id: string; name: string }[]
   onCompiled?: (revision: ClassRevision) => void
+  onUser?: (user: AuthUser) => void
   onClose: () => void
 }
 
@@ -25,12 +27,21 @@ const QUICK_PROMPTS = [
   'What did each student catch that others missed?',
 ]
 
-export default function AIPanel({ user, notes, pages, journals = [], onCompiled, onClose }: Props) {
+export default function AIPanel({ user, notes, pages, journals = [], onCompiled, onUser, onClose }: Props) {
   const [messages, setMessages] = useState<Message[]>([])
   const [input,    setInput]    = useState('')
   const [loading,  setLoading]  = useState(false)
+  const [paying,   setPaying]   = useState(false)
+  const [paywall,  setPaywall]  = useState(Boolean(user.isTeacher && user.needsPro))
+  const [payError, setPayError] = useState<string | null>(null)
+  const [hiveUser, setHiveUser] = useState(user)
   const bottomRef  = useRef<HTMLDivElement>(null)
   const inputRef   = useRef<HTMLTextAreaElement>(null)
+
+  useEffect(() => {
+    setHiveUser(user)
+    setPaywall(Boolean(user.isTeacher && user.needsPro))
+  }, [user])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -39,6 +50,11 @@ export default function AIPanel({ user, notes, pages, journals = [], onCompiled,
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 100)
   }, [])
+
+  const applyHive = (next: AuthUser) => {
+    setHiveUser(next)
+    onUser?.(next)
+  }
 
   const send = async (text: string) => {
     const trimmed = text.trim()
@@ -52,7 +68,7 @@ export default function AIPanel({ user, notes, pages, journals = [], onCompiled,
 
     try {
       const data = await aiChat(
-        user.token,
+        hiveUser.token,
         trimmed,
         messages.map(m => ({ role: m.role, content: m.content })),
       )
@@ -74,25 +90,87 @@ export default function AIPanel({ user, notes, pages, journals = [], onCompiled,
 
   const compile = async () => {
     if (loading) return
+    if (!hiveUser.isTeacher) {
+      setMessages(m => [...m, {
+        role: 'assistant',
+        content: 'Only the teacher can compile. Keep writing in your own book — they will unlock the class revision.',
+      }])
+      return
+    }
+    if (hiveUser.needsPro && hiveUser.plan !== 'pro') {
+      setPaywall(true)
+      return
+    }
+
     const userMsg: Message = { role: 'user', content: 'Compile class revision' }
     const history = [...messages, userMsg]
     setMessages(history)
     setLoading(true)
     try {
-      const revision = await aiCompile(user.token)
+      const data = await aiCompile(hiveUser.token)
+      applyHive(mergeHiveUser(hiveUser, data))
+      setPaywall(false)
       setMessages([...history, {
         role: 'assistant',
         content: 'The class revision page is ready. Opening it now.',
       }])
-      if (revision && onCompiled) onCompiled(revision)
+      if (data.revision && onCompiled) onCompiled(data.revision)
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Compile failed'
-      const reply = msg.includes('GROQ_API_KEY')
-        ? 'Add GROQ_API_KEY to server/.env and restart the API.'
-        : msg
-      setMessages([...history, { role: 'assistant', content: reply }])
+      const needsPro = Boolean((err as Error & { needsPro?: boolean }).needsPro)
+      if (needsPro) {
+        applyHive(mergeHiveUser(hiveUser, { needsPro: true, canCompile: false, isTeacher: true }))
+        setPaywall(true)
+        setMessages([...history, {
+          role: 'assistant',
+          content: 'Your class already wrote the lecture. Unlock Hive Pro for another compile.',
+        }])
+      } else {
+        const reply = msg.includes('GROQ_API_KEY')
+          ? 'Add GROQ_API_KEY to server/.env and restart the API.'
+          : msg
+        setMessages([...history, { role: 'assistant', content: reply }])
+      }
     }
     setLoading(false)
+  }
+
+  const unlock = async () => {
+    setPaying(true)
+    setPayError(null)
+    try {
+      const status = await fetchHiveStatus(hiveUser.token)
+      await purchaseHivePro(hiveUser.userId, status.publicApiKey)
+      const synced = await syncHivePro(hiveUser.token)
+      applyHive(mergeHiveUser(hiveUser, synced))
+      setPaywall(false)
+      setMessages(m => [...m, {
+        role: 'assistant',
+        content: 'Hive Pro is unlocked for this class. Compile whenever you need a new revision.',
+      }])
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Could not unlock Hive Pro'
+      if (/cancel/i.test(msg)) {
+        setPayError(null)
+      } else {
+        setPayError(msg)
+      }
+    }
+    setPaying(false)
+  }
+
+  const refreshPlan = async () => {
+    setPaying(true)
+    setPayError(null)
+    try {
+      const synced = await syncHivePro(hiveUser.token)
+      applyHive(mergeHiveUser(hiveUser, synced))
+      if (synced.plan === 'pro') setPaywall(false)
+      else setPayError('Hive Pro is not active on this class yet.')
+    } catch (err) {
+      setPayError(err instanceof Error ? err.message : 'Could not refresh Hive Pro')
+    }
+    setPaying(false)
   }
 
   const onKey = (e: React.KeyboardEvent) => {
@@ -102,8 +180,9 @@ export default function AIPanel({ user, notes, pages, journals = [], onCompiled,
     }
   }
 
-  const filledPages = pages.filter(p => p.text?.trim()).length
+  const filledPages = pages.filter(p => p.text?.trim() || p.handText?.trim()).length
   const filledNotes = notes.filter(n => n.content?.trim() || n.mediaUrl).length
+  const teacher = Boolean(hiveUser.isTeacher)
 
   return (
     <div
@@ -148,6 +227,7 @@ export default function AIPanel({ user, notes, pages, journals = [], onCompiled,
                 letterSpacing: '.08em',
               }}>
                 {journals.filter(j => j.id !== '__class__').length || 'all'} books · {filledPages} pages · {filledNotes} items
+                {teacher ? ' · teacher' : ' · student'}
               </p>
             </div>
             <button
@@ -160,6 +240,76 @@ export default function AIPanel({ user, notes, pages, journals = [], onCompiled,
             >×</button>
           </div>
         </div>
+
+        {paywall && teacher && (
+          <div style={{
+            margin: '16px 20px 0',
+            padding: '18px 18px 16px',
+            borderRadius: 16,
+            border: '1px solid rgba(201,168,76,0.35)',
+            background: 'rgba(201,168,76,0.1)',
+          }}>
+            <p style={{
+              fontFamily: 'var(--font-cormorant)',
+              fontStyle: 'italic',
+              fontSize: 20,
+              color: 'var(--cream)',
+              marginBottom: 6,
+            }}>
+              Your class already wrote the lecture.
+            </p>
+            <p style={{
+              fontFamily: 'var(--font-cormorant)',
+              fontSize: 14,
+              color: 'rgba(245,237,216,0.7)',
+              lineHeight: 1.5,
+              marginBottom: 14,
+            }}>
+              The first compile is free. Hive Pro unlocks more class revisions and the listen-through — writing, convert, diagrams, and joining stay free.
+            </p>
+            <button
+              className="liq liq-gold"
+              onClick={unlock}
+              disabled={paying}
+              style={{
+                width: '100%',
+                padding: '11px 16px',
+                borderRadius: 12,
+                fontFamily: 'var(--font-cormorant)',
+                fontSize: 16,
+                color: 'var(--gold-lt)',
+                marginBottom: 8,
+              }}
+            >
+              {paying ? 'Opening checkout…' : `Unlock Hive Pro · ${HIVE_PRICE}`}
+            </button>
+            <button
+              className="liq"
+              onClick={refreshPlan}
+              disabled={paying}
+              style={{
+                width: '100%',
+                padding: '9px 16px',
+                borderRadius: 12,
+                fontFamily: 'var(--font-cormorant)',
+                fontSize: 13,
+                color: 'rgba(245,237,216,0.7)',
+              }}
+            >
+              I already subscribed — refresh
+            </button>
+            {payError && (
+              <p style={{
+                marginTop: 10,
+                fontFamily: 'var(--font-cormorant)',
+                fontSize: 13,
+                color: 'rgba(255,180,160,0.9)',
+              }}>
+                {payError}
+              </p>
+            )}
+          </div>
+        )}
 
         <div style={{
           flex: 1, overflowY: 'auto',
@@ -180,23 +330,35 @@ export default function AIPanel({ user, notes, pages, journals = [], onCompiled,
                 textAlign: 'center', lineHeight: 1.6,
                 maxWidth: 320,
               }}>
-                Merge every lecture into a cited study studio — guide, quiz, glossary, and a listen-through
+                {teacher
+                  ? 'Merge every lecture into a cited study studio — guide, quiz, glossary, and a listen-through'
+                  : 'Keep writing in your book. Your teacher compiles the class revision when the hive is ready.'}
               </p>
-              <button
-                className="liq liq-gold"
-                onClick={compile}
-                disabled={loading}
-                style={{
-                  width: '100%',
-                  padding: '12px 16px',
-                  borderRadius: 12,
+              {teacher ? (
+                <button
+                  className="liq liq-gold"
+                  onClick={compile}
+                  disabled={loading}
+                  style={{
+                    width: '100%',
+                    padding: '12px 16px',
+                    borderRadius: 12,
+                    fontFamily: 'var(--font-cormorant)',
+                    fontSize: 16,
+                    color: 'var(--gold-lt)',
+                  }}
+                >
+                  Compile class revision
+                </button>
+              ) : (
+                <p style={{
                   fontFamily: 'var(--font-cormorant)',
-                  fontSize: 16,
-                  color: 'var(--gold-lt)',
-                }}
-              >
-                Compile class revision
-              </button>
+                  fontSize: 13,
+                  color: 'rgba(245,237,216,0.35)',
+                }}>
+                  Students write for free. Compile is teacher-only.
+                </p>
+              )}
               <div style={{display:'flex', flexDirection:'column', gap:8, width:'100%'}}>
                 {QUICK_PROMPTS.map(qp => (
                   <button
@@ -285,7 +447,7 @@ export default function AIPanel({ user, notes, pages, journals = [], onCompiled,
           borderTop: '1px solid rgba(255,255,255,0.07)',
           display: 'flex', gap: 10, alignItems: 'flex-end',
         }}>
-          {messages.length > 0 && (
+          {messages.length > 0 && teacher && (
             <button
               className="liq"
               onClick={compile}

@@ -1,4 +1,4 @@
-import { Room, Note, Page } from '@/types'
+import { Room, Note, Page, AuthUser } from '@/types'
 import { apiBase } from './backend'
 
 const req = async <T>(
@@ -26,13 +26,13 @@ const req = async <T>(
 // ── Auth ──────────────────────────────────────────────────────
 export const authApi = {
   create: (nickname: string, password: string) =>
-    req<{ token: string; roomCode: string; nickname: string; userId: string; pageIndex: number }>(
+    req<{ token: string; roomCode: string; nickname: string; userId: string; pageIndex: number } & Pick<AuthUser, 'isTeacher' | 'plan' | 'compileCount' | 'canCompile' | 'needsPro'>>(
       '/auth/create',
       { method: 'POST', body: JSON.stringify({ nickname, password }) }
     ),
 
   join: (nickname: string, roomCode: string, password: string) =>
-    req<{ token: string; roomCode: string; nickname: string; userId: string; pageIndex: number }>(
+    req<{ token: string; roomCode: string; nickname: string; userId: string; pageIndex: number } & Pick<AuthUser, 'isTeacher' | 'plan' | 'compileCount' | 'canCompile' | 'needsPro'>>(
       '/auth/join',
       { method: 'POST', body: JSON.stringify({ nickname, roomCode, password }) }
     ),

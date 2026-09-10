@@ -7,11 +7,15 @@ datasource db {
 }
 
 model Room {
-  id           String   @id @default(uuid())
-  code         String   @unique
-  passwordHash String
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id            String   @id @default(uuid())
+  code          String   @unique
+  passwordHash  String
+  teacherUserId String?  @db.VarChar(36)
+  plan          String   @default("free") @db.VarChar(20)
+  compileCount  Int      @default(0)
+  rcCustomerId  String?  @db.VarChar(80)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
   pages        Page[]
   notes        Note[]

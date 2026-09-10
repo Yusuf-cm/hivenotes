@@ -6,6 +6,7 @@ import { prisma } from '../lib/prisma'
 import { signToken } from '../middleware/auth'
 import { ensureOwnedPage } from '../lib/ownedPage'
 import { broadcast } from '../ws/server'
+import { hiveStatus } from '../lib/hive'
 
 const router = Router()
 
@@ -18,7 +19,8 @@ const issueSession = (
   nickname: string,
   roomId: string,
   roomCode: string,
-  pageIndex: number
+  pageIndex: number,
+  room: { teacherUserId: string | null; plan: string; compileCount: number }
 ) => {
   const token = signToken({
     userId,
@@ -27,7 +29,14 @@ const issueSession = (
     roomCode,
   })
 
-  return { token, roomCode, nickname, userId, pageIndex }
+  return {
+    token,
+    roomCode,
+    nickname,
+    userId,
+    pageIndex,
+    ...hiveStatus(room, userId),
+  }
 }
 
 // ── POST /auth/create ─────────────────────────────────────────
@@ -60,20 +69,19 @@ router.post('/create', async (req: Request, res: Response): Promise<void> => {
       exists = !!(await prisma.room.findUnique({ where: { code } }))
     } while (exists)
 
+    const userId = uuid()
     const passwordHash = await bcrypt.hash(password, 10)
 
     const room = await prisma.room.create({
-      data: { code, passwordHash },
+      data: { code, passwordHash, teacherUserId: userId },
     })
-
-    const userId = uuid()
     await prisma.activeUser.create({
       data: { id: userId, nickname: name, roomId: room.id },
     })
 
     const { page } = await ensureOwnedPage(room.id, userId, name)
 
-    res.status(201).json(issueSession(userId, name, room.id, room.code, page.pageIndex))
+    res.status(201).json(issueSession(userId, name, room.id, room.code, page.pageIndex, room))
   } catch (err) {
     console.error('[auth/create]', err)
     res.status(500).json({ error: 'Failed to create room' })
@@ -133,7 +141,7 @@ router.post('/join', async (req: Request, res: Response): Promise<void> => {
       broadcast(room.code, 'page:created', page)
     }
 
-    res.status(200).json(issueSession(user.id, name, room.id, room.code, page.pageIndex))
+    res.status(200).json(issueSession(user.id, name, room.id, room.code, page.pageIndex, room))
   } catch (err) {
     console.error('[auth/join]', err)
     res.status(500).json({ error: 'Failed to join room' })

@@ -1,0 +1,18 @@
+{
+  "name": "hivenotes-ipad",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Capacitor iPad shell that loads the hosted HiveNotes notebook",
+  "scripts": {
+    "cap:sync": "npx cap sync",
+    "cap:ios": "npx cap open ios",
+    "cap:add:ios": "npx cap add ios"
+  },
+  "dependencies": {
+    "@capacitor/core": "^7.4.3",
+    "@capacitor/ios": "^7.4.3"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.4.3"
+  }
+}

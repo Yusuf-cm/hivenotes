@@ -117,8 +117,13 @@ export const aiCompile = async (token: string) => {
     body: JSON.stringify({}),
   })
   const data = await res.json().catch(() => ({}))
-  if (!res.ok) throw new Error(data.error || 'Compile failed')
-  return data.revision
+  if (!res.ok) {
+    const err = new Error(data.error || 'Compile failed') as Error & { needsPro?: boolean; status?: number }
+    err.needsPro = Boolean(data.needsPro) || res.status === 402
+    err.status = res.status
+    throw err
+  }
+  return data
 }
 
 export const aiNote = async (token: string, type: string, content: string) => {

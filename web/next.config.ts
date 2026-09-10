@@ -1,12 +1,6 @@
 import type { NextConfig } from 'next'
 import path from 'path'
 
-const apiOrigin = (() => {
-  const raw = process.env.INTERNAL_API_URL || process.env.PUBLIC_API_URL || 'http://127.0.0.1:4000'
-  if (/^https?:\/\//i.test(raw)) return raw.replace(/\/$/, '')
-  return `http://${raw.replace(/\/$/, '')}`
-})()
-
 const nextConfig: NextConfig = {
   allowedDevOrigins: [
     '*.trycloudflare.com',
@@ -16,8 +10,11 @@ const nextConfig: NextConfig = {
     '*.onrender.com',
   ],
   async rewrites() {
+    // Production uses the runtime /hn-api/[...path] route so PUBLIC_API_URL
+    // is read per request. Local `next dev` still rewrites to the API.
+    if (process.env.NODE_ENV === 'production') return []
     return [
-      { source: '/hn-api/:path*', destination: `${apiOrigin}/:path*` },
+      { source: '/hn-api/:path*', destination: 'http://127.0.0.1:4000/:path*' },
     ]
   },
   turbopack: {

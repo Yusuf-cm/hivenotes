@@ -54,10 +54,10 @@ export const useAuth = () => {
     }
   }
 
-  const join = async (nickname: string, roomCode: string, password: string) => {
+  const join = async (nickname: string, roomCode: string, password: string, classPassword?: string) => {
     setError(null)
     try {
-      const res = await authApi.join(nickname, roomCode, password)
+      const res = await authApi.join(nickname, roomCode, password, classPassword)
       return await finalise(res.userId, res.token, res.roomCode, res.nickname, res.pageIndex)
     } catch (e: any) {
       setError(e.message)

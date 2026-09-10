@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express'
 import { Prisma } from '@prisma/client'
 import { prisma } from '../lib/prisma'
 import { requireAuth } from '../middleware/auth'
-import { getOrCreateOwnedPage, getRoomPage, isPageOwner } from '../lib/ownedPage'
+import { getOrCreateOwnedPage, isPageOwner } from '../lib/ownedPage'
 import { sanitizeInk } from '../lib/ink'
 import { sanitizeDiagram } from '../lib/diagram'
 import { broadcast } from '../ws/server'
@@ -77,7 +77,12 @@ router.patch('/:pageIndex', requireAuth, async (req: Request, res: Response): Pr
   }
 
   try {
-    const page = await getRoomPage(req.user!.roomId, req.user!.userId, pageIndex)
+    const page = await getOrCreateOwnedPage(
+      req.user!.roomId,
+      req.user!.userId,
+      req.user!.nickname,
+      pageIndex
+    )
 
     if (!page) {
       res.status(404).json({ error: 'Page not found' })

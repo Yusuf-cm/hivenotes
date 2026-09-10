@@ -15,6 +15,7 @@ export default function LoginScreen({ onLogin }: Props) {
   const [nickname, setNickname] = useState('')
   const [roomCode, setRoomCode] = useState('')
   const [password, setPassword] = useState('')
+  const [classPassword, setClassPassword] = useState('')
   const [loading,  setLoading]  = useState(false)
   const [bookOpen, setBookOpen] = useState(false)
 
@@ -25,7 +26,7 @@ export default function LoginScreen({ onLogin }: Props) {
     try {
       const user = mode === 'create'
         ? await create(nickname.trim(), password.trim())
-        : await join(nickname.trim(), roomCode.trim().toUpperCase(), password.trim())
+        : await join(nickname.trim(), roomCode.trim().toUpperCase(), password.trim(), classPassword.trim() || undefined)
       onLogin(user)
     } catch {}
     setLoading(false)
@@ -271,6 +272,42 @@ export default function LoginScreen({ onLogin }: Props) {
               </div>
             )}
 
+            {mode === 'join' && (
+              <div>
+                <label style={{
+                  display: 'block', fontSize: 10,
+                  letterSpacing: '.22em', textTransform: 'uppercase',
+                  fontFamily: 'var(--font-cormorant)',
+                  color: 'rgba(245,237,216,0.36)', marginBottom: 6,
+                }}>Class Password</label>
+                <input
+                  type="password" value={classPassword}
+                  onChange={e => setClassPassword(e.target.value)}
+                  placeholder="the one your teacher set"
+                  style={{
+                    width: '100%', padding: '10px 13px',
+                    background: 'rgba(0,0,0,0.22)',
+                    borderRadius: 10,
+                    border: '1px solid rgba(255,255,255,0.1)',
+                    color: 'var(--cream)', fontSize: 15,
+                    fontFamily: 'var(--font-cormorant)',
+                    outline: 'none', transition: 'border-color .2s',
+                  }}
+                  onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
+                  onBlur={e  => e.currentTarget.style.borderColor='rgba(255,255,255,0.1)'}
+                />
+                <p style={{
+                  marginTop: 6,
+                  fontSize: 11,
+                  fontFamily: 'var(--font-cormorant)',
+                  fontStyle: 'italic',
+                  color: 'rgba(245,237,216,0.28)',
+                }}>
+                  Needed the first time you use a name. Opening your own book later only needs your password.
+                </p>
+              </div>
+            )}
+
             {/* Password */}
             <div>
               <label style={{
@@ -279,7 +316,7 @@ export default function LoginScreen({ onLogin }: Props) {
                 fontFamily: 'var(--font-cormorant)',
                 color: 'rgba(245,237,216,0.36)', marginBottom: 6,
               }}>
-                {mode === 'create' ? 'Set Password' : 'Password'}
+                {mode === 'create' ? 'Set Class Password' : 'Your Password'}
               </label>
               <input
                 type="password" value={password}
@@ -297,6 +334,17 @@ export default function LoginScreen({ onLogin }: Props) {
                 onFocus={e => e.currentTarget.style.borderColor='rgba(201,168,76,0.5)'}
                 onBlur={e  => e.currentTarget.style.borderColor='rgba(255,255,255,0.1)'}
               />
+              <p style={{
+                marginTop: 6,
+                fontSize: 11,
+                fontFamily: 'var(--font-cormorant)',
+                fontStyle: 'italic',
+                color: 'rgba(245,237,216,0.28)',
+              }}>
+                {mode === 'create'
+                  ? 'Students use this to join the class. It also unlocks your book — don’t share your name.'
+                  : 'Locks this name to you. Classmates cannot open your book with the class password.'}
+              </p>
             </div>
 
             {error && (

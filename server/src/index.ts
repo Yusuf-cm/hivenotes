@@ -94,7 +94,7 @@ declare global {
 // Rate limit auth endpoints more aggressively (5 req/min per IP)
 app.use('/auth', rateLimit(60 * 1000, 40), authRoutes)
 app.use('/rooms', rateLimit(15 * 60 * 1000, 100), roomRoutes)
-app.use('/pages', rateLimit(15 * 60 * 1000, 200), pageRoutes)
+app.use('/pages', rateLimit(15 * 60 * 1000, 2000), pageRoutes)
 app.use('/notes', rateLimit(15 * 60 * 1000, 200), noteRoutes)
 app.use('/upload', rateLimit(15 * 60 * 1000, 80), uploadRoutes)
 app.use('/ai', rateLimit(15 * 60 * 1000, 160), aiRoutes)

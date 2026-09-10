@@ -45,11 +45,12 @@ model ClassRevision {
 }
 
 model ActiveUser {
-  id        String   @id @default(uuid())
-  nickname  String   @db.VarChar(50)
-  roomId    String
-  createdAt DateTime @default(now())
-  room      Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  id           String   @id @default(uuid())
+  nickname     String   @db.VarChar(50)
+  passwordHash String?
+  roomId       String
+  createdAt    DateTime @default(now())
+  room         Room     @relation(fields: [roomId], references: [id], onDelete: Cascade)
 
   @@unique([roomId, nickname])
   @@index([roomId])

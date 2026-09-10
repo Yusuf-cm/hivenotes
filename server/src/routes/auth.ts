@@ -76,7 +76,7 @@ router.post('/create', async (req: Request, res: Response): Promise<void> => {
       data: { code, passwordHash, teacherUserId: userId },
     })
     await prisma.activeUser.create({
-      data: { id: userId, nickname: name, roomId: room.id },
+      data: { id: userId, nickname: name, roomId: room.id, passwordHash },
     })
 
     const { page } = await ensureOwnedPage(room.id, userId, name)
@@ -91,7 +91,7 @@ router.post('/create', async (req: Request, res: Response): Promise<void> => {
 // ── POST /auth/join ───────────────────────────────────────────
 // Reuses the member row for this nickname so page ownership survives rejoin
 router.post('/join', async (req: Request, res: Response): Promise<void> => {
-  const { nickname, roomCode, password } = req.body
+  const { nickname, roomCode, password, classPassword } = req.body
 
   if (!nickname?.trim() || !roomCode?.trim() || !password?.trim()) {
     res.status(400).json({ error: 'nickname, roomCode and password are required' })
@@ -119,19 +119,49 @@ router.post('/join', async (req: Request, res: Response): Promise<void> => {
       return
     }
 
-    const passwordMatch = await bcrypt.compare(password, room.passwordHash)
-    if (!passwordMatch) {
-      res.status(401).json({ error: 'Wrong password' })
-      return
-    }
-
     let user = await prisma.activeUser.findUnique({
       where: { roomId_nickname: { roomId: room.id, nickname: name } },
     })
 
-    if (!user) {
+    if (user) {
+      if (user.passwordHash) {
+        const bookMatch = await bcrypt.compare(password, user.passwordHash)
+        if (!bookMatch) {
+          res.status(401).json({ error: 'This name already has a book. Use that password, or pick a different name.' })
+          return
+        }
+      } else {
+        const roomMatch = await bcrypt.compare(classPassword || password, room.passwordHash)
+        if (!roomMatch) {
+          res.status(401).json({ error: 'Wrong class password' })
+          return
+        }
+        await prisma.activeUser.update({
+          where: { id: user.id },
+          data: { passwordHash: await bcrypt.hash(password, 10) },
+        })
+      }
+    } else {
+      if (typeof classPassword !== 'string' || !classPassword.trim()) {
+        res.status(400).json({ error: 'Class password is required the first time you use a name' })
+        return
+      }
+      const passwordMatch = await bcrypt.compare(classPassword, room.passwordHash)
+      if (!passwordMatch) {
+        res.status(401).json({ error: 'Wrong class password' })
+        return
+      }
+      if (classPassword === password) {
+        res.status(400).json({ error: 'Pick a different password from the class password so nobody else can open your book' })
+        return
+      }
       user = await prisma.activeUser.create({
-        data: { id: uuid(), nickname: name, roomId: room.id },
+        data: {
+          id: uuid(),
+          nickname: name,
+          roomId: room.id,
+          passwordHash: await bcrypt.hash(password, 10),
+        },
       })
     }
 

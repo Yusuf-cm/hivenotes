@@ -10,11 +10,22 @@ class SocketClient {
   private handlers: Map<string, Set<EventHandler>> = new Map()
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private dead = false
+  private wakeBound = false
 
   connect(token: string): void {
     this.token = token
     this.dead  = false
+    this.reconnectAttempts = 0
     this._connect()
+    if (typeof document !== 'undefined' && !this.wakeBound) {
+      this.wakeBound = true
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState !== 'visible' || this.dead || !this.token) return
+        if (this.isOpen) return
+        this.reconnectAttempts = 0
+        this._connect()
+      })
+    }
   }
 
   private reconnectAttempts = 0
@@ -87,6 +98,10 @@ class SocketClient {
     console.log(`[ws] reconnecting in ${delay}ms (attempt ${this.reconnectAttempts}/${this.maxReconnectAttempts})`)
 
     this.reconnectTimer = setTimeout(() => this._connect(), delay)
+  }
+
+  get isOpen(): boolean {
+    return this.ws?.readyState === WebSocket.OPEN
   }
 
   send(event: ClientEvent['event'], data: unknown): void {

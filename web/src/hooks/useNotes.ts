@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { Note, AuthUser } from '@/types'
 import { socket } from '@/lib/socket'
+import { noteApi } from '@/lib/api'
 
 export const useNotes = (initialNotes: Note[], user: AuthUser) => {
   const [notes, setNotes] = useState<Note[]>(initialNotes)
@@ -96,6 +97,18 @@ export const useNotes = (initialNotes: Note[], user: AuthUser) => {
       mediaUrl:   persistUrl,
       checkboxes: [],
     })
+    if (!socket.isOpen) {
+      noteApi.create({
+        pageIndex,
+        pageOwnerId: user.userId,
+        content: optimistic.content,
+        color: optimistic.color,
+        x, y,
+        zIndex: optimistic.zIndex,
+        mediaType: persistUrl ? optimistic.mediaType : (overrides.mediaType || 'none'),
+        mediaUrl: persistUrl || undefined,
+      }, user.token).catch(console.error)
+    }
 
     return tempId
   }, [notes.length, user])
@@ -107,12 +120,18 @@ export const useNotes = (initialNotes: Note[], user: AuthUser) => {
       return
     }
     socket.send('note:update', { id, ...delta })
-  }, [])
+    if (!socket.isOpen) {
+      noteApi.update(id, delta, user.token).catch(console.error)
+    }
+  }, [user.token])
 
   const deleteNote = useCallback((id: string) => {
     setNotes(prev => prev.filter(n => n.id !== id))
     socket.send('note:delete', { id })
-  }, [])
+    if (!socket.isOpen && !id.startsWith('temp-')) {
+      noteApi.delete(id, user.token).catch(console.error)
+    }
+  }, [user.token])
 
   const bringToFront = useCallback((id: string) => {
     setNotes(prev => {

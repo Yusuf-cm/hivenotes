@@ -31,10 +31,10 @@ export const authApi = {
       { method: 'POST', body: JSON.stringify({ nickname, password }) }
     ),
 
-  join: (nickname: string, roomCode: string, password: string) =>
+  join: (nickname: string, roomCode: string, password: string, classPassword?: string) =>
     req<{ token: string; roomCode: string; nickname: string; userId: string; pageIndex: number } & Pick<AuthUser, 'isTeacher' | 'plan' | 'compileCount' | 'canCompile' | 'needsPro'>>(
       '/auth/join',
-      { method: 'POST', body: JSON.stringify({ nickname, roomCode, password }) }
+      { method: 'POST', body: JSON.stringify({ nickname, roomCode, password, classPassword }) }
     ),
 }
 

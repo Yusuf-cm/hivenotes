@@ -84,26 +84,58 @@ export const usePages = (initialPages: Page[], user: AuthUser) => {
   }, [])
 
   const pendingRef = useRef<Record<string, PagePatch>>({})
+  const userRef = useRef(user)
+  userRef.current = user
+
+  const flushKey = useCallback((key: string, forceRest = false) => {
+    const merged = pendingRef.current[key]
+    if (!merged) return
+    delete pendingRef.current[key]
+    if (debounceRef.current[key]) {
+      clearTimeout(debounceRef.current[key])
+      delete debounceRef.current[key]
+    }
+    const current = userRef.current
+    const pageIndex = Number(key.slice(key.lastIndexOf(':') + 1))
+    const page = pagesRef.current.find(p => p.pageIndex === pageIndex && p.ownerUserId === current.userId)
+    const data = {
+      text: merged.text ?? page?.text ?? '',
+      ink: merged.ink ?? parseInk(page?.ink),
+      handText: merged.handText ?? page?.handText ?? '',
+      diagram: merged.diagram ?? parseDiagram(page?.diagram),
+      diagramUrl: merged.diagramUrl !== undefined ? merged.diagramUrl : page?.diagramUrl,
+    }
+    socket.send('page:update', { pageIndex, ...data })
+    // REST is the durability path when the socket is down, and on hide so
+    // a closing tab still writes even if the WS frame never lands.
+    if (forceRest || !socket.isOpen) {
+      pageApi.update(pageIndex, data, current.token).catch(console.error)
+    }
+  }, [])
+
+  const flushAll = useCallback(() => {
+    Object.keys(pendingRef.current).forEach(key => flushKey(key, true))
+  }, [flushKey])
+
+  useEffect(() => {
+    const onHide = () => {
+      if (document.visibilityState === 'hidden') flushAll()
+    }
+    document.addEventListener('visibilitychange', onHide)
+    window.addEventListener('pagehide', flushAll)
+    return () => {
+      document.removeEventListener('visibilitychange', onHide)
+      window.removeEventListener('pagehide', flushAll)
+      flushAll()
+    }
+  }, [flushAll])
 
   const persist = useCallback((pageIndex: number, payload: PagePatch) => {
     const key = `${user.userId}:${pageIndex}`
     pendingRef.current[key] = { ...pendingRef.current[key], ...payload }
     if (debounceRef.current[key]) clearTimeout(debounceRef.current[key])
-    debounceRef.current[key] = setTimeout(() => {
-      const merged = pendingRef.current[key] || {}
-      delete pendingRef.current[key]
-      const page = pagesRef.current.find(p => p.pageIndex === pageIndex && p.ownerUserId === user.userId)
-      const data = {
-        text: merged.text ?? page?.text ?? '',
-        ink: merged.ink ?? parseInk(page?.ink),
-        handText: merged.handText ?? page?.handText ?? '',
-        diagram: merged.diagram ?? parseDiagram(page?.diagram),
-        diagramUrl: merged.diagramUrl !== undefined ? merged.diagramUrl : page?.diagramUrl,
-      }
-      socket.send('page:update', { pageIndex, ...data })
-      pageApi.update(pageIndex, data, user.token).catch(console.error)
-    }, 700)
-  }, [user])
+    debounceRef.current[key] = setTimeout(() => flushKey(key), 700)
+  }, [user.userId, flushKey])
 
   const patchPage = useCallback((pageIndex: number, payload: PagePatch) => {
     setPages(prev => prev.map(p =>

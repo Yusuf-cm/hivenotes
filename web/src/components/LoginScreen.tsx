@@ -34,14 +34,16 @@ export default function LoginScreen({ onLogin }: Props) {
 
   return (
     <div
-      className="tex-wood"
+      className="tex-wood classroom-entry"
       style={{
-        width: '100vw', height: '100vh',
+        width: '100%', minHeight: '100dvh',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         overflow: 'auto', position: 'relative',
         padding: '24px 16px calc(24px + env(safe-area-inset-bottom))',
       }}
     >
+      <header className="classroom-brand"><span>HiveNotes / Classroom</span><span>Your thinking, together.</span></header>
+      <div className="classroom-story"><p>THE CLASSROOM JOURNAL</p><h1>A place for every<br/>bright idea.</h1><p>Write in your own book. Sketch what clicks. Bring the class’s ideas together in one hive.</p><div><span>01 / Personal notebooks</span><span>02 / Shared classroom</span><span>03 / Notes, sketches & revision</span></div></div>
       {/* Desk vignette */}
       <div style={{
         position: 'absolute', inset: 0, pointerEvents: 'none',
@@ -61,6 +63,8 @@ export default function LoginScreen({ onLogin }: Props) {
 
         {/* ── Decorative book ──────────────────────────────── */}
         <div
+          role="button" tabIndex={0} aria-label={bookOpen ? 'Close preview book' : 'Open preview book'} aria-pressed={bookOpen}
+          onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setBookOpen(o => !o) } }}
           onClick={() => setBookOpen(o => !o)}
           style={{
             cursor: 'pointer',
@@ -169,7 +173,7 @@ export default function LoginScreen({ onLogin }: Props) {
             color: 'var(--cream)',
             marginBottom: 4,
           }}>
-            Welcome
+            Your classroom starts here
           </h2>
           <p style={{
             fontFamily: 'var(--font-cormorant)',
@@ -192,6 +196,8 @@ export default function LoginScreen({ onLogin }: Props) {
             {(['create','join'] as const).map(m => (
               <button
                 key={m}
+                aria-pressed={mode === m}
+                disabled={loading}
                 onClick={() => setMode(m)}
                 style={{
                   flex: 1, padding: '8px 0',
@@ -209,7 +215,7 @@ export default function LoginScreen({ onLogin }: Props) {
                   outline: 'none',
                 }}
               >
-                {m === 'create' ? '✦ New Journal' : '⎋ Open Journal'}
+                {m === 'create' ? 'Create a class' : 'Join / return'}
               </button>
             ))}
           </div>
@@ -226,6 +232,7 @@ export default function LoginScreen({ onLogin }: Props) {
                 color: 'rgba(245,237,216,0.36)', marginBottom: 6,
               }}>Your Name</label>
               <input
+                aria-label="Your name" autoComplete="username" maxLength={50}
                 type="text" value={nickname}
                 onChange={e => setNickname(e.target.value)}
                 placeholder="e.g. Yusuf" required
@@ -251,8 +258,9 @@ export default function LoginScreen({ onLogin }: Props) {
                   letterSpacing: '.22em', textTransform: 'uppercase',
                   fontFamily: 'var(--font-cormorant)',
                   color: 'rgba(245,237,216,0.36)', marginBottom: 6,
-                }}>Journal Code</label>
+                }}>Class Code</label>
                 <input
+                  aria-label="Class code" maxLength={6}
                   type="text" value={roomCode}
                   onChange={e => setRoomCode(e.target.value.toUpperCase())}
                   placeholder="e.g. A1B2C3" required
@@ -281,6 +289,7 @@ export default function LoginScreen({ onLogin }: Props) {
                   color: 'rgba(245,237,216,0.36)', marginBottom: 6,
                 }}>Class Password</label>
                 <input
+                  aria-label="Class password" autoComplete="off"
                   type="password" value={classPassword}
                   onChange={e => setClassPassword(e.target.value)}
                   placeholder="the one your teacher set"
@@ -319,6 +328,7 @@ export default function LoginScreen({ onLogin }: Props) {
                 {mode === 'create' ? 'Set Class Password' : 'Your Password'}
               </label>
               <input
+                aria-label={mode === "create" ? "Set class password" : "Your password"} autoComplete={mode === "create" ? "new-password" : "current-password"}
                 type="password" value={password}
                 onChange={e => setPassword(e.target.value)}
                 placeholder="at least 6 characters" required minLength={6}

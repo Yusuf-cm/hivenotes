@@ -9,7 +9,7 @@ if (!connectionString) throw new Error('DATABASE_URL is not set')
 // this the client resolves every table against `public` while migrations were
 // applied to DATABASE_SCHEMA, and queries fail with TableDoesNotExist.
 const schema = process.env.DATABASE_SCHEMA
-const adapter = new PrismaPg({ connectionString }, schema ? { schema } : undefined)
+const adapter = new PrismaPg({ connectionString, max: Number(process.env.DB_POOL_MAX || 5), idleTimeoutMillis: 30000 }, schema ? { schema } : undefined)
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient }
 

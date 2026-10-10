@@ -28,6 +28,8 @@ function BoardInner({ user, onUser }: { user: AuthUser; onUser: (user: AuthUser)
   const [initialNotes, setInitialNotes] = useState<Note[]>([])
   const [initialPages, setInitialPages] = useState<Page[]>([])
   const [roomLoaded,   setRoomLoaded]   = useState(false)
+  const [roomError, setRoomError] = useState<string | null>(null)
+  const [roomAttempt, setRoomAttempt] = useState(0)
   const [isMobile,     setIsMobile]     = useState<boolean | null>(null)
   const [currentPage,     setCurrentPage]     = useState(0)
   const [viewingOwnerId,  setViewingOwnerId]  = useState(user.userId)
@@ -59,6 +61,8 @@ function BoardInner({ user, onUser }: { user: AuthUser; onUser: (user: AuthUser)
 
   // ── Fetch room data on mount ──────────────────────────────
   useEffect(() => {
+    setRoomError(null)
+    setRoomLoaded(false)
     roomApi.get(user.roomCode, user.token)
       .then(room => {
         setInitialNotes(room.notes)
@@ -89,9 +93,9 @@ function BoardInner({ user, onUser }: { user: AuthUser; onUser: (user: AuthUser)
           window.location.reload()
           return
         }
-        setRoomLoaded(true)
+        setRoomError('Your classroom could not be loaded. Your saved work has not been replaced.')
       })
-  }, [user.roomCode, user.token, user.userId, user.pageIndex])
+  }, [user.roomCode, user.token, user.userId, user.pageIndex, roomAttempt])
 
   useEffect(() => {
     socket.send('page:view', { pageIndex: currentPage })
@@ -299,6 +303,7 @@ function BoardInner({ user, onUser }: { user: AuthUser; onUser: (user: AuthUser)
   const deskOpen = writeMode === 'diagram'
 
   // ── Loading states ────────────────────────────────────────
+  if (roomError) return <main className="tex-wood" style={{ minHeight: '100dvh', display: 'grid', placeContent: 'center', color: '#f5edd8', textAlign: 'center', padding: 24 }}><p role="alert">{roomError}</p><button onClick={() => setRoomAttempt(a => a + 1)} style={{ marginTop: 20, padding: 14, border: '1px solid #c9a84c' }}>Try again</button></main>
   if (isMobile === null || !roomLoaded) {
     return (
       <div className="tex-wood" style={{

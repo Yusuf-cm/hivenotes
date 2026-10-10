@@ -25,10 +25,10 @@ const req = async <T>(
 
 // ── Auth ──────────────────────────────────────────────────────
 export const authApi = {
-  create: (nickname: string, password: string) =>
+  create: (nickname: string, password: string, classPassword: string) =>
     req<{ token: string; roomCode: string; nickname: string; userId: string; pageIndex: number } & Pick<AuthUser, 'isTeacher' | 'plan' | 'compileCount' | 'canCompile' | 'needsPro'>>(
       '/auth/create',
-      { method: 'POST', body: JSON.stringify({ nickname, password }) }
+      { method: 'POST', body: JSON.stringify({ nickname, password, classPassword }) }
     ),
 
   join: (nickname: string, roomCode: string, password: string, classPassword?: string) =>

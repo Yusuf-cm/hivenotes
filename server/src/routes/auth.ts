@@ -42,7 +42,7 @@ const issueSession = (
 // ── POST /auth/create ─────────────────────────────────────────
 // Creates a new room + issues JWT for the creator
 router.post('/create', async (req: Request, res: Response): Promise<void> => {
-  const { nickname, password } = req.body
+  const { nickname, password, classPassword } = req.body
 
   if (typeof nickname !== 'string' || typeof password !== 'string' || !nickname.trim() || !password.trim()) {
     res.status(400).json({ error: 'nickname and password are required' })
@@ -54,8 +54,17 @@ router.post('/create', async (req: Request, res: Response): Promise<void> => {
     return
   }
 
-  if (password.length < 6) {
-    res.status(400).json({ error: 'password must be at least 6 characters' })
+  if (password.length < 6 || Buffer.byteLength(password, 'utf8') > 72) {
+    res.status(400).json({ error: 'password must be at least 6 characters and at most 72 UTF-8 bytes' })
+    return
+  }
+
+  if (typeof classPassword !== 'string' || classPassword.length < 6 || Buffer.byteLength(classPassword, 'utf8') > 72) {
+    res.status(400).json({ error: 'Choose a class invitation password of 6 characters to 72 UTF-8 bytes' })
+    return
+  }
+  if (classPassword === password) {
+    res.status(400).json({ error: 'Your private password must differ from the class invitation password' })
     return
   }
 
@@ -71,9 +80,10 @@ router.post('/create', async (req: Request, res: Response): Promise<void> => {
 
     const userId = uuid()
     const passwordHash = await bcrypt.hash(password, 10)
+    const classPasswordHash = await bcrypt.hash(classPassword, 10)
 
     const room = await prisma.room.create({
-      data: { code, passwordHash, teacherUserId: userId },
+      data: { code, passwordHash: classPasswordHash, teacherUserId: userId },
     })
     await prisma.activeUser.create({
       data: { id: userId, nickname: name, roomId: room.id, passwordHash },
@@ -103,8 +113,8 @@ router.post('/join', async (req: Request, res: Response): Promise<void> => {
     return
   }
 
-  if (password.length < 6) {
-    res.status(400).json({ error: 'password must be at least 6 characters' })
+  if (password.length < 6 || Buffer.byteLength(password, 'utf8') > 72) {
+    res.status(400).json({ error: 'password must be at least 6 characters and at most 72 UTF-8 bytes' })
     return
   }
 

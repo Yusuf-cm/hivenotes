@@ -7,7 +7,7 @@ import { requireAuth } from '../middleware/auth'
 import { groqBriefingAudio, groqChat, groqKey, groqReadHandwriting } from '../lib/groq'
 import { getOrCreateOwnedPage } from '../lib/ownedPage'
 import { extractFromNote, isPlaceholderContent } from '../lib/processMedia'
-import { buildRoomSources, parseJsonLoose, studioFromModel } from '../lib/roomContext'
+import { buildRoomSources, parseJsonLoose, selectRelevantSources, studioFromModel, type RevisionSource } from '../lib/roomContext'
 import { broadcast } from '../ws/server'
 import { cache } from '../lib/cache'
 import { config } from '../config'
@@ -136,31 +136,39 @@ router.post('/chat', requireAuth, async (req: Request, res: Response): Promise<v
 
   try {
     const revision = await prisma.classRevision.findUnique({ where: { roomId: req.user!.roomId } })
-    const { sources, context } = await buildRoomSources(req.user!.roomId)
-    const sourceList = Array.isArray(revision?.sources) && (revision!.sources as any[]).length
-      ? revision!.sources
+    const { sources } = await buildRoomSources(req.user!.roomId)
+    const catalog: RevisionSource[] = Array.isArray(revision?.sources) && (revision!.sources as any[]).length
+      ? revision!.sources as unknown as RevisionSource[]
       : sources
 
-    const sourceBlock = Array.isArray(sourceList)
-      ? (sourceList as any[]).map((s: any) => `[${s.id}] ${s.label}\n${s.excerpt || ''}`).join('\n\n')
-      : context
+    const selectedSources = selectRelevantSources(catalog, content, 8)
+    const sourceBlock = selectedSources
+      .map(s => `[${s.id}] ${s.label}\n${s.excerpt || ''}`)
+      .join('\n\n')
 
-    const guide = revision?.body ? `\n\nStudy guide:\n${revision.body}` : ''
+    const guide = revision?.body
+      ? `\n\nCompiled study guide (secondary context; numbered sources remain authoritative):\n${revision.body.slice(0, 5000)}`
+      : ''
 
     const system = sourceBlock
-      ? `You are a classroom tutor for ${req.user!.nickname}.
-Answer ONLY from the study guide and numbered sources (typed notes, converted handwriting, diagram descriptions, audio, photos). If it is not in the sources, say you do not have it.
+      ? `You are a careful classroom tutor for ${req.user!.nickname}.
+Answer ONLY from the numbered journal sources and the optional compiled study guide below.
+Reason across the sources before answering: combine matching evidence, notice disagreements, and distinguish what the class actually recorded from what is uncertain.
+If the sources do not contain enough information, say exactly what is missing instead of filling the gap from general knowledge.
+Answer the student's question directly first, then explain only as much as needed.
 Return ONLY JSON: { "text": "markdown answer", "citations": ["S1"] }
-Use citations for every factual claim. Be clear. You may explain simply or quiz the student.`
-      : `You are a classroom tutor for ${req.user!.nickname}. The journals are empty. Return JSON { "text": "...", "citations": [] }.`
+Every factual claim must be supported by at least one numbered source. Citations must reference only the source IDs provided below.`
+      : `You are a classroom tutor for ${req.user!.nickname}. The journals are empty. Return JSON { "text": "The journals do not contain anything I can answer from yet.", "citations": [] }.`
 
     const messages = [
-      ...history.filter((m: any) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
-        .map((m: any) => ({ role: m.role, content: m.content })),
-      { role: 'user', content },
+      ...history
+        .filter((m: any) => m && (m.role === 'user' || m.role === 'assistant') && typeof m.content === 'string')
+        .slice(-8)
+        .map((m: any) => ({ role: m.role, content: m.content.slice(0, 2000) })),
+      { role: 'user', content: content.slice(0, 4000) },
     ]
 
-    const raw = await groqChat(`${system}\n\nSources:\n${sourceBlock}${guide}`, messages, 1400)
+    const raw = await groqChat(`${system}\n\nRelevant sources:\n${sourceBlock}${guide}`, messages, 1800)
     let text = raw
     let citations: string[] = []
     try {
@@ -169,9 +177,8 @@ Use citations for every factual claim. Be clear. You may explain simply or quiz 
       citations = Array.isArray(parsed.citations) ? parsed.citations.map(String) : []
     } catch {}
 
-    const catalog = Array.isArray(sourceList) ? sourceList as any[] : []
     const cited = citations
-      .map(id => catalog.find((s: any) => s.id === id))
+      .map(id => selectedSources.find(s => s.id === id))
       .filter(Boolean)
       .map((s: any) => ({ id: s.id, label: s.label }))
 

@@ -4,7 +4,7 @@ const GROQ_URL = 'https://api.groq.com/openai/v1/chat/completions'
 const GROQ_TRANSCRIBE = 'https://api.groq.com/openai/v1/audio/transcriptions'
 
 export const CHAT_MODEL = process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b'
-export const VISION_MODEL = process.env.GROQ_VISION_MODEL || 'qwen/qwen3.6-27b'
+export const VISION_MODEL = process.env.GROQ_VISION_MODEL || 'qwen/qwen3.8-27b'
 export const STT_MODEL = process.env.GROQ_STT_MODEL || 'whisper-large-v3-turbo'
 
 export const groqKey = () => process.env.GROQ_API_KEY || ''

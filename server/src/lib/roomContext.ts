@@ -103,6 +103,62 @@ export const collectSources = (
 export const formatSourcesForPrompt = (sources: RevisionSource[]) =>
   sources.map(s => `[${s.id}] ${s.label}\n${s.excerpt}`).join('\n\n')
 
+const SEARCH_STOP_WORDS = new Set([
+  'a','an','and','are','as','at','be','because','but','by','can','do','does','for','from',
+  'had','has','have','how','i','if','in','is','it','me','my','of','on','or','our','so',
+  'that','the','their','this','to','was','we','were','what','when','where','which','who',
+  'why','with','you','your','explain','tell','please',
+])
+
+const searchTerms = (text: string) =>
+  (text.toLowerCase().match(/[a-z0-9][a-z0-9_-]{1,}/g) || [])
+    .filter(term => !SEARCH_STOP_WORDS.has(term))
+
+const sourceRelevance = (source: RevisionSource, query: string) => {
+  const terms = [...new Set(searchTerms(query))]
+  if (!terms.length) return 0
+
+  const label = source.label.toLowerCase()
+  const body = source.excerpt.toLowerCase()
+  let score = 0
+
+  for (const term of terms) {
+    if (label.includes(term)) score += 4
+    const matches = body.split(term).length - 1
+    score += Math.min(matches, 4)
+  }
+
+  const normalizedQuery = query.trim().toLowerCase()
+  if (normalizedQuery.length >= 8 && body.includes(normalizedQuery)) score += 8
+  return score
+}
+
+/**
+ * Lightweight retrieval for tutor chat.
+ *
+ * Sending every journal page to the model made answers noisier as a room grew.
+ * Rank the room's evidence against the student's question and send only the
+ * strongest sources. This stays deterministic and requires no embedding API.
+ */
+export const selectRelevantSources = (
+  sources: RevisionSource[],
+  query: string,
+  limit = 8,
+): RevisionSource[] => {
+  if (sources.length <= limit) return sources
+
+  const ranked = sources
+    .map((source, index) => ({ source, index, score: sourceRelevance(source, query) }))
+    .sort((a, b) => b.score - a.score || a.index - b.index)
+
+  const relevant = ranked.filter(item => item.score > 0).slice(0, limit).map(item => item.source)
+  if (relevant.length >= Math.min(3, sources.length)) return relevant
+
+  // Broad questions ("summarize the lecture") often have few lexical matches.
+  // Fall back to a representative slice rather than an arbitrary single note.
+  return ranked.slice(0, limit).map(item => item.source)
+}
+
 export const formatRoomContext = (pages: PageRow[], notes: NoteRow[]) => {
   const sources = collectSources(pages, notes)
   return formatSourcesForPrompt(sources)

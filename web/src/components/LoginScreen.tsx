@@ -25,8 +25,8 @@ export default function LoginScreen({ onLogin }: Props) {
     setLoading(true)
     try {
       const user = mode === 'create'
-        ? await create(nickname.trim(), password.trim())
-        : await join(nickname.trim(), roomCode.trim().toUpperCase(), password.trim(), classPassword.trim() || undefined)
+        ? await create(nickname.trim(), password, classPassword)
+        : await join(nickname.trim(), roomCode.trim().toUpperCase(), password, classPassword || undefined)
       onLogin(user)
     } catch {}
     setLoading(false)
@@ -36,7 +36,7 @@ export default function LoginScreen({ onLogin }: Props) {
     <div
       className="tex-wood classroom-entry"
       style={{
-        width: '100%', minHeight: '100dvh',
+        width: '100%', height: '100dvh',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
         overflow: 'auto', position: 'relative',
         padding: '24px 16px calc(24px + env(safe-area-inset-bottom))',
@@ -280,19 +280,19 @@ export default function LoginScreen({ onLogin }: Props) {
               </div>
             )}
 
-            {mode === 'join' && (
+            {true && (
               <div>
                 <label style={{
                   display: 'block', fontSize: 10,
                   letterSpacing: '.22em', textTransform: 'uppercase',
                   fontFamily: 'var(--font-cormorant)',
                   color: 'rgba(245,237,216,0.36)', marginBottom: 6,
-                }}>Class Password</label>
+                }}>Class Invitation Password</label>
                 <input
                   aria-label="Class password" autoComplete="off"
                   type="password" value={classPassword}
                   onChange={e => setClassPassword(e.target.value)}
-                  placeholder="the one your teacher set"
+                  maxLength={72} placeholder={mode === "create" ? "Share this with your students" : "The one your teacher set"} required={mode === "create"} minLength={mode === "create" ? 6 : undefined}
                   style={{
                     width: '100%', padding: '10px 13px',
                     background: 'rgba(0,0,0,0.22)',
@@ -312,7 +312,7 @@ export default function LoginScreen({ onLogin }: Props) {
                   fontStyle: 'italic',
                   color: 'rgba(245,237,216,0.28)',
                 }}>
-                  Needed the first time you use a name. Opening your own book later only needs your password.
+                  {mode === 'create' ? 'Share this invitation password with students. Keep your private password below to yourself.' : 'Needed the first time you use a name. Returning to your notebook only needs your private password.'}
                 </p>
               </div>
             )}
@@ -325,13 +325,13 @@ export default function LoginScreen({ onLogin }: Props) {
                 fontFamily: 'var(--font-cormorant)',
                 color: 'rgba(245,237,216,0.36)', marginBottom: 6,
               }}>
-                {mode === 'create' ? 'Set Class Password' : 'Your Password'}
+                Your Private Password
               </label>
               <input
-                aria-label={mode === "create" ? "Set class password" : "Your password"} autoComplete={mode === "create" ? "new-password" : "current-password"}
+                aria-label="Your private password" autoComplete={mode === "create" ? "new-password" : "current-password"}
                 type="password" value={password}
                 onChange={e => setPassword(e.target.value)}
-                placeholder="at least 6 characters" required minLength={6}
+                placeholder="at least 6 characters" required minLength={6} maxLength={72}
                 style={{
                   width: '100%', padding: '10px 13px',
                   background: 'rgba(0,0,0,0.22)',
@@ -352,7 +352,7 @@ export default function LoginScreen({ onLogin }: Props) {
                 color: 'rgba(245,237,216,0.28)',
               }}>
                 {mode === 'create'
-                  ? 'Students use this to join the class. It also unlocks your book — don’t share your name.'
+                  ? 'Keep this password private. Choose a different password from the class invitation.'
                   : 'Locks this name to you. Classmates cannot open your book with the class password.'}
               </p>
             </div>

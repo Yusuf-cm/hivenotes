@@ -43,10 +43,10 @@ export const useAuth = () => {
     return authUser
   }
 
-  const create = async (nickname: string, password: string) => {
+  const create = async (nickname: string, password: string, classPassword: string) => {
     setError(null)
     try {
-      const res = await authApi.create(nickname, password)
+      const res = await authApi.create(nickname, password, classPassword)
       return await finalise(res.userId, res.token, res.roomCode, res.nickname, res.pageIndex)
     } catch (e: any) {
       setError(e.message)

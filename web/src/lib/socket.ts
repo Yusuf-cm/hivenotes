@@ -36,7 +36,7 @@ class SocketClient {
     if (this.dead) return
 
     const url = `${wsBase()}/ws?token=${this.token}`
-    console.log('[ws] connecting to', url.replace(this.token, this.token.slice(0, 20) + '...'))
+    console.log('[ws] connecting')
 
     try {
       this.ws = new WebSocket(url)

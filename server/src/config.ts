@@ -13,7 +13,7 @@ export const config = {
   port:       parseInt(process.env.PORT || '4000', 10),
   jwtSecret:  required('JWT_SECRET'),
   clientUrl:  process.env.CLIENT_URL || 'http://localhost:3000',
-  uploadsDir: path.resolve(__dirname, '../uploads'),
+  uploadsDir: process.env.UPLOADS_DIR || path.resolve(__dirname, '../uploads'),
   db: {
     url: required('DATABASE_URL'),
   },

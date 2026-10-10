@@ -44,7 +44,7 @@ const issueSession = (
 router.post('/create', async (req: Request, res: Response): Promise<void> => {
   const { nickname, password } = req.body
 
-  if (!nickname?.trim() || !password?.trim()) {
+  if (typeof nickname !== 'string' || typeof password !== 'string' || !nickname.trim() || !password.trim()) {
     res.status(400).json({ error: 'nickname and password are required' })
     return
   }
@@ -93,7 +93,7 @@ router.post('/create', async (req: Request, res: Response): Promise<void> => {
 router.post('/join', async (req: Request, res: Response): Promise<void> => {
   const { nickname, roomCode, password, classPassword } = req.body
 
-  if (!nickname?.trim() || !roomCode?.trim() || !password?.trim()) {
+  if (typeof nickname !== 'string' || typeof roomCode !== 'string' || typeof password !== 'string' || !nickname.trim() || !roomCode.trim() || !password.trim()) {
     res.status(400).json({ error: 'nickname, roomCode and password are required' })
     return
   }
